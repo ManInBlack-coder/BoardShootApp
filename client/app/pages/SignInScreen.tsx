@@ -23,7 +23,7 @@ export default function SignInScreen() {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#4B5FBD" />
+          <Ionicons name="arrow-back" size={24} marginLeft={-20} color="#FFFFFF" />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
@@ -51,7 +51,11 @@ export default function SignInScreen() {
       </TouchableOpacity>
 
       <Text style={styles.footerText}>
-        Don't have an account? <Text style={styles.signUpText}>Sign Up</Text>
+        Don't have an account? <Text style={styles.signUpText}>
+        <Text onPress={() => navigation.navigate('SignUp')}>
+          Sign Up
+        </Text>
+          </Text>
       </Text>
     </View>
   );
@@ -76,13 +80,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 10,
-    color: "#4B5FBD",
+    color: "#FFFFFF",
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     color: "#FFFFFF",
     marginBottom: 40,
+    marginTop: 40,
+
   },
   input: {
     width: '100%',
@@ -94,7 +100,7 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     width: '100%',
-    marginTop: 70,
+    marginTop: 150,
   },
   button: {
     padding: 15,
@@ -122,8 +128,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   image: {
-    width: '100%',
-    height: 200,
+    width: '120%',
+    height: 300,
     borderRadius: 0,
   },
   titleContainer: {

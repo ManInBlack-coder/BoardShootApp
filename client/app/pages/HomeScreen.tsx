@@ -22,7 +22,7 @@ export default function HomeScreen() {
       </View>
    <View style={styles.subtitleContainer}>
    <Text style={styles.subtitle}>Your concepts will be noticed!</Text>
-      <HomeButton title="Sign In" onPress={() => navigation.navigate('SignIn')} />
+      <HomeButton title="Start" onPress={() => navigation.navigate('SignIn')} />
    </View>
     </View>
   );
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 200,
+    height: 300,
     borderRadius: 0,
   },
   title: {
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: "#FFFFFF",
     textAlign: "center",
-
+    marginTop: 40,
   },
   titleContainer: {
     position: 'absolute',
@@ -54,6 +54,7 @@ const styles = StyleSheet.create({
     transform: [{ translateX: -50 }, { translateY: -50 }],
     alignItems: 'center',
     justifyContent: 'center',
+    
   },
   subtitle: {
     fontSize: 18,
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   subtitleContainer: {
-    marginTop: 50,
+    marginTop: 300,
     height: '100%',
     width: '70%',
    

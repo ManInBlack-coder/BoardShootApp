@@ -22,7 +22,7 @@ export default function SignUpScreen() {
       >
         <Ionicons name="arrow-back" size={24} color="#4B5FBD" />
       </TouchableOpacity>
-     <Text>Here is login screen</Text></View>;
+     <Text>Here is SingUp</Text></View>;
 }
 
 const styles = StyleSheet.create({
