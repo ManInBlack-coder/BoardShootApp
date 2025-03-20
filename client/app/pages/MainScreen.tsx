@@ -14,12 +14,14 @@ export default function MainScreen() {
         tabBarStyle: { backgroundColor: '#00C898' },
         tabBarActiveTintColor: '#FFFFFF',
         tabBarInactiveTintColor: '#C28D00',
+       
       }}
       initialRouteName="Camera"
     >
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+        <Tab.Screen name="Folders" component={FoldersScreen} />
+
       <Tab.Screen name="Camera" component={CameraScreen} />
-      <Tab.Screen name="Folders" component={FoldersScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }
