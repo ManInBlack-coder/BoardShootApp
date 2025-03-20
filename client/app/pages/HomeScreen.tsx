@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/(tabs)/index';
+import HomeButton from '../components/HomeButton';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -19,13 +20,10 @@ export default function HomeScreen() {
           <Text style={styles.title}>BOARDSHOOT</Text>
         </View>
       </View>
-      <Text style={styles.subtitle}>Your concepts will be noticed!</Text>
-      <TouchableOpacity 
-        style={styles.button}
-        onPress={() => navigation.navigate('SignUp')}
-      >
-        <Text style={styles.buttonText}>Start</Text>
-      </TouchableOpacity>
+   <View style={styles.subtitleContainer}>
+   <Text style={styles.subtitle}>Your concepts will be noticed!</Text>
+      <HomeButton title="Sign In" onPress={() => navigation.navigate('SignIn')} />
+   </View>
     </View>
   );
 }
@@ -51,8 +49,8 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     position: 'absolute',
-    top: '50%',
-    left: '50%',
+    top: '65%',
+    left: '35%',
     transform: [{ translateX: -50 }, { translateY: -50 }],
     alignItems: 'center',
     justifyContent: 'center',
@@ -65,13 +63,22 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#C28D00",
+    height: 60,
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+
+    
   },
   buttonText: {
     color: "#FFFFFF",
     textAlign: "center",
     fontSize: 18,
+    verticalAlign: 'middle',
   },
   imageContainer: {
     width: '100%',
@@ -79,5 +86,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  subtitleContainer: {
+    marginTop: 50,
+    height: '100%',
+    width: '70%',
+   
   },
 });

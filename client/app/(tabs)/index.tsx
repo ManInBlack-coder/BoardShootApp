@@ -15,6 +15,7 @@ export type RootStackParamList = {
   Camera: undefined;
   Settings: undefined;
   Folders: undefined;
+  CameraScreen: undefined;
 };
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
       }}
     >
       <Stack.Screen name="Home" component={HomeScreen} />
+
       <Stack.Screen name="SignUp" component={SignUpScreen} />
       <Stack.Screen name="SignIn" component={SignInScreen} />
       <Stack.Screen name="Camera" component={CameraScreen} />
