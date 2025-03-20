@@ -3,9 +3,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import HomeButton from "../components/HomeButton";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/app/(tabs)/index';
+import { RootStackParamList } from '@/app/types/types'
 
-type CameraScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CameraScreen'>;
+type CameraScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
 export default function SignInScreen() {
   const navigation = useNavigation<CameraScreenNavigationProp>();
@@ -47,7 +47,7 @@ export default function SignInScreen() {
   
 
       <TouchableOpacity style={styles.button}>
-        <HomeButton title="Sign In" onPress={() => navigation.navigate('CameraScreen')} />
+        <HomeButton title="Sign In" onPress={() => navigation.navigate('MainScreen')} />
       </TouchableOpacity>
 
       <Text style={styles.footerText}>

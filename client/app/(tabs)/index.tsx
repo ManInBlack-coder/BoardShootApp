@@ -7,16 +7,10 @@ import SignInScreen from '../pages/SignInScreen';
 import CameraScreen from '../pages/CameraScreen';
 import SettingsScreen from '../pages/SettingsScreen';
 import FoldersScreen from '../pages/FoldersScreen';
+import MainScreen from '../pages/MainScreen';
+import { RootStackParamList } from '../types/types';
 
-export type RootStackParamList = {
-  Home: undefined;
-  SignUp: undefined;
-  SignIn: undefined;
-  Camera: undefined;
-  Settings: undefined;
-  Folders: undefined;
-  CameraScreen: undefined;
-};
+
 
 export default function App() {
   return (
@@ -41,7 +35,7 @@ export default function App() {
       <Stack.Screen name="Camera" component={CameraScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Folders" component={FoldersScreen} />
-
+      <Stack.Screen name="MainScreen" component={MainScreen} />
       
    </Stack.Navigator>
   );
