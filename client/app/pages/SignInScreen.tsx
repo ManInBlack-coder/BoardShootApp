@@ -1,62 +1,96 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import HomeButton from "../components/HomeButton";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/app/types/types'
+import { RootStackParamList } from '@/app/types/types';
+import React, { useState } from 'react';
+import HomeButton from "../components/HomeButton";
 
-type CameraScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
+type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
 export default function SignInScreen() {
-  const navigation = useNavigation<CameraScreenNavigationProp>();
+  const navigation = useNavigation<SignInScreenNavigationProp>();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   
+  const handleSignIn = () => {
+    // TODO: Implement sign in logic
+    console.log('Sign in:', { email, password });
+    navigation.navigate('MainScreen');
+  };
+
   return (
     <View style={styles.container}>
-   
-   <View style={styles.titleContainer}></View>
-      <View style={styles.imageContainer}>
+       <View style={styles.imageContainer}>
         <Image 
           source={require('../../assets/images/HomeBanner.webp')}
           style={styles.image}
         />
         <TouchableOpacity 
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate('Home')}
         >
-          <Ionicons name="arrow-back" size={24} marginLeft={-20} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={24}   color="#FFFFFF" />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <Text style={styles.title}>BOARDSHOOT</Text>
         </View>
       </View>
-      <View style={styles.inputContainer}> 
 
-      <TextInput 
-        style={styles.input}
-        placeholder="E-mail"
-        keyboardType="email-address"
-      />
-      <TextInput 
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-      />
+      <View style={styles.form}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>E-mail</Text>
+          <TextInput 
+            style={styles.input}
+            placeholder="example@gmail.com"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholderTextColor="#999"
+          />
+        </View>
 
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Password</Text>
+          <View style={styles.passwordContainer}>
+            <TextInput 
+              style={[styles.input, styles.passwordInput]}
+              placeholder="••••••••••"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              placeholderTextColor="#999"
+            />
+            <TouchableOpacity 
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Ionicons 
+                name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                size={24} 
+                color="#999" 
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <TouchableOpacity 
+          style={styles.signInButton}
+          onPress={handleSignIn}
+        >
+         <HomeButton  title="Sign In" onPress={() => navigation.navigate('MainScreen')} />
+         </TouchableOpacity>
+
+         <View style={styles.signUpContainer}>
+          <Text style={styles.signUpText}>Already have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+            <Text style={styles.signUpLink}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-  
-
-      <TouchableOpacity style={styles.button}>
-        <HomeButton title="Sign In" onPress={() => navigation.navigate('MainScreen')} />
-      </TouchableOpacity>
-
-      <Text style={styles.footerText}>
-        Don't have an account? <Text style={styles.signUpText}>
-        <Text onPress={() => navigation.navigate('SignUp')}>
-          Sign Up
-        </Text>
-          </Text>
-      </Text>
     </View>
   );
 }
@@ -64,10 +98,19 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    backgroundColor: "#00C898",
-    padding: 20,
+    backgroundColor: '#00C898',
+  },
+  imageContainer: {
+    width: '100%',
+    height: '23%',
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
   },
   backButton: {
     position: 'absolute',
@@ -82,54 +125,78 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     color: "#FFFFFF",
   },
-  title: {
+  logo: {
     fontSize: 32,
+    color: '#fff',
     fontWeight: 'bold',
-    color: "#FFFFFF",
-    marginBottom: 40,
-    marginTop: 40,
-
+    textAlign: 'center',
+    letterSpacing: 2,
   },
-  input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 5,
-    paddingHorizontal: 10,
+  form: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    marginTop: 100,
+  },
+  inputGroup: {
     marginBottom: 20,
   },
-  inputContainer: {
-    width: '100%',
-    marginTop: 150,
+  label: {
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 8,
   },
-  button: {
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: 25,
     padding: 15,
-    width: '80%',
+    fontSize: 16,
+    color: '#333',
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 50,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 15,
+    top: 12,
+  },
+  signInButton: {
+    borderRadius: 25,
+    padding: 15,
     alignItems: 'center',
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  footerText: {
     marginTop: 20,
-    color: "#FFFFFF",
+  },
+  signInButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  signUpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
   },
   signUpText: {
-    color: "#C28D00",
-    fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 16,
+    flexDirection: 'row',
   },
-  imageContainer: {
-    width: '100%',
-    height: '23%',
-    position: 'relative',
+  signUpLink: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
   },
   image: {
     width: '120%',
-    height: 300,
+    height: 350,
     borderRadius: 0,
   },
   titleContainer: {
@@ -137,8 +204,13 @@ const styles = StyleSheet.create({
     top: '65%',
     left: '35%',
     transform: [{ translateX: -50 }, { translateY: -50 }],
-    alignItems: 'center',
-    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: "#FFFFFF",
+    marginBottom: 40,
+    marginTop: 40,
   },
 }); 
 

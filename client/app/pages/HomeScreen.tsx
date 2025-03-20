@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, Button } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/types/types'
-import HomeButton from '../components/HomeButton';
+import HomeButton from "../components/HomeButton";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -11,19 +11,27 @@ export default function HomeScreen() {
   
   return (
     <View style={styles.container}>
-      <View style={styles.imageContainer}>
-        <Image 
-          source={require('../../assets/images/HomeBanner.webp')}
-          style={styles.image}
-        />
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>BOARDSHOOT</Text>
+      <View style={styles.content}>
+        <View style={styles.imageSection}>
+          <Image 
+            source={require('../../assets/images/HomeBanner.webp')}
+            style={styles.image}
+          />
+          <View style={styles.overlay} />
+          <Text style={styles.logo}>BOARDSHOOT</Text>
         </View>
+
+        <View style={styles.messageSection}>
+          <Text style={styles.message}>Your concepts will be noticed!</Text>
+        </View>
+
+        <TouchableOpacity 
+          style={styles.startButton}
+          onPress={() => navigation.navigate('SignIn')}
+        >
+          <HomeButton title="Start" onPress={() => navigation.navigate('SignIn')} />
+        </TouchableOpacity>
       </View>
-   <View style={styles.subtitleContainer}>
-   <Text style={styles.subtitle}>Your concepts will be noticed!</Text>
-      <HomeButton title="Start" onPress={() => navigation.navigate('SignIn')} />
-   </View>
     </View>
   );
 }
@@ -31,67 +39,69 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-start",
     backgroundColor: "#00C898",
+  },
+  content: {
+    flex: 1,
+    alignItems: "center",
+  },
+  imageSection: {
+    width: '100%',
+    height: '50%',
+    position: 'relative',
   },
   image: {
     width: '100%',
-    height: 300,
-    borderRadius: 0,
+    height: '100%',
+    resizeMode: 'cover',
   },
-  title: {
-    fontSize: 32,
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  logo: {
+    position: 'absolute',
+    width: '100%',
+    textAlign: 'center',
+    bottom: '20%',
+    fontSize: 35,
     fontWeight: 'bold',
     color: "#FFFFFF",
-    textAlign: "center",
-    marginTop: 40,
+    letterSpacing: 2,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 3,
   },
-  titleContainer: {
-    position: 'absolute',
-    top: '65%',
-    left: '35%',
-    transform: [{ translateX: -50 }, { translateY: -50 }],
-    alignItems: 'center',
+  messageSection: {
+    flex: 1,
     justifyContent: 'center',
-    
+    paddingHorizontal: 30,
   },
-  subtitle: {
-    fontSize: 18,
+  message: {
+    fontSize: 32,
     color: "#FFFFFF",
     textAlign: "center",
-    marginBottom: 20,
+    fontWeight: '500',
+    lineHeight: 40,
   },
-  button: {
-    backgroundColor: "#C28D00",
-    height: 60,
-    padding: 10,
-    borderRadius: 20,
+  startButton: {
+    paddingVertical: 15,
+    paddingHorizontal: 60,
+    borderRadius: 25,
+    marginBottom: 50,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-
-    
+    width: '80%',
   },
-  buttonText: {
+  startButtonText: {
     color: "#FFFFFF",
-    textAlign: "center",
-    fontSize: 18,
-    verticalAlign: 'middle',
-  },
-  imageContainer: {
-    width: '100%',
-    height: '23%',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  subtitleContainer: {
-    marginTop: 300,
-    height: '100%',
-    width: '70%',
-   
+    fontSize: 20,
+    fontWeight: '600',
   },
 });
