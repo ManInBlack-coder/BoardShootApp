@@ -1,6 +1,7 @@
 package com.boardshoot.boardshoot.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 public class Note {
@@ -15,6 +16,7 @@ public class Note {
 
     @ManyToOne
     @JoinColumn(name = "folder_id")
+    @JsonManagedReference 
     private Folder folder;
 
     public Note() {}

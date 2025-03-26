@@ -1,4 +1,5 @@
 package com.boardshoot.boardshoot.model;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.*;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ public class Folder {
     private User user;
 
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonBackReference
     private List<Note> notes = new ArrayList<>();
 
     public Folder() {}
