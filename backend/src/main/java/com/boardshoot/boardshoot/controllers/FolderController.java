@@ -34,4 +34,17 @@ public class FolderController {
     public List<Folder> getFoldersByUser(@PathVariable Long userId) {
         return folderRepository.findByUserId(userId);
     }
+
+    @GetMapping("/{userId}/{folderName}")
+        public Folder getFolderByUserAndName(@PathVariable Long userId, @PathVariable String folderName) {
+            Optional<User> userOptional = userRepository.findById(userId);
+            if (!userOptional.isPresent()) {
+                throw new RuntimeException("User not found");
+            }
+            Optional<Folder> folder = folderRepository.findByUserAndName(userOptional.get(), folderName);
+            if (folder.isPresent()) {
+                return folder.get();
+            }
+            throw new RuntimeException("Folder not found");
+    }
 }
