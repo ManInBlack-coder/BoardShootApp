@@ -1,6 +1,9 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from "react";
+import { useNavigation } from '@react-navigation/native';
+import { useEffect } from 'react';
+import FilesScreen from "./FilesScreen";
 
 
 interface FolderProps {
@@ -10,7 +13,7 @@ interface FolderProps {
 
 
 const FolderItem = ({ name, count }: FolderProps) => (
- <TouchableOpacity style={styles.folderItem}>
+ <TouchableOpacity style={styles.folderItem} onPress={(FileItem) => {}}>
    <Ionicons name="folder" size={50} color="#666" />
    <Text style={styles.folderName}>{name}</Text>
    <Text style={styles.folderCount}>{count}</Text>
