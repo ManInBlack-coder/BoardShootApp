@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput } from "react-native";
-import Icon from 'react-native-vector-icons/FontAwesome'; 
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 export default function SettingsScreen() {
   const [name, setName] = useState('Rannu68');
@@ -36,7 +36,7 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <Image 
-        source={require('../../assets/images/SettingsBanner.webp')} 
+        source={require('@/assets/images/SettingsBanner.webp')} 
         style={styles.image} 
       />
       <Text style={styles.text}>BOARDSHOOT</Text>
@@ -46,7 +46,7 @@ export default function SettingsScreen() {
       <View style={styles.box}>
         <View style={styles.boxContent}>
           <TouchableOpacity onPress={handleEditNamePress}>
-            <Icon name="pencil" size={20} color="white" style={styles.icon} />
+            <FontAwesome name="pencil" size={20} color="white" style={styles.icon} />
           </TouchableOpacity>
           {!isEditingName ? (
             <Text style={styles.boxText}>{name}</Text>
@@ -59,7 +59,7 @@ export default function SettingsScreen() {
                 autoFocus
               />
               <TouchableOpacity onPress={handleSaveNamePress}>
-                <Icon name="check" size={20} color="green" style={styles.checkIcon} />
+                <FontAwesome name="check" size={20} color="green" style={styles.checkIcon} />
               </TouchableOpacity>
             </View>
           )}
@@ -70,7 +70,7 @@ export default function SettingsScreen() {
       <View style={styles.box}>
         <View style={styles.boxContent}>
           <TouchableOpacity onPress={handleEditEmailPress}>
-            <Icon name="pencil" size={20} color="white" style={styles.icon} />
+            <FontAwesome name="pencil" size={20} color="white" style={styles.icon} />
           </TouchableOpacity>
           {!isEditingEmail ? (
             <Text style={styles.boxText}>{email}</Text>
@@ -83,7 +83,7 @@ export default function SettingsScreen() {
                 autoFocus
               />
               <TouchableOpacity onPress={handleSaveEmailPress}>
-                <Icon name="check" size={20} color="green" style={styles.checkIcon} />
+                <FontAwesome name="check" size={20} color="green" style={styles.checkIcon} />
               </TouchableOpacity>
             </View>
           )}
@@ -94,7 +94,7 @@ export default function SettingsScreen() {
 
       <TouchableOpacity style={styles.box2} onPress={toggleDayNightMode}>
         <View style={styles.dayNightBox}>
-          <Icon name="sun-o" size={25} color="yellow" style={styles.sunIcon} />
+          <FontAwesome name="sun-o" size={25} color="yellow" style={styles.sunIcon} />
           <View style={[styles.ovalBox, { backgroundColor: isDayMode ? 'white' : 'black' }]}>
             <TouchableOpacity 
               style={[styles.ball, { 
@@ -104,7 +104,7 @@ export default function SettingsScreen() {
               onPress={toggleDayNightMode}
             />
           </View>
-          <Icon name="moon-o" size={25} color="white" style={styles.moonIcon} />
+          <FontAwesome name="moon-o" size={25} color="white" style={styles.moonIcon} />
         </View>
       </TouchableOpacity>
     </View>

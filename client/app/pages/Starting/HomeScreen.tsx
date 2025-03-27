@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, Button } from "react-n
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/types/types'
-import HomeButton from "../components/HomeButton";
+import HomeButton from "../../components/HomeButton";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -14,7 +14,7 @@ export default function HomeScreen() {
       <View style={styles.content}>
         <View style={styles.imageSection}>
           <Image 
-            source={require('../../assets/images/HomeBanner.webp')}
+            source={require('@/assets/images/HomeBanner.webp')}
             style={styles.image}
           />
           <View style={styles.overlay} />
