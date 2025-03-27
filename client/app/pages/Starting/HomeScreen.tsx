@@ -14,7 +14,7 @@ export default function HomeScreen() {
       <View style={styles.content}>
         <View style={styles.imageSection}>
           <Image 
-            source={require('../../assets/images/HomeBanner.webp')}
+            source={require('@/assets/images/HomeBanner.webp')}
             style={styles.image}
           />
           <View style={styles.overlay} />

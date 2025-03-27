@@ -24,7 +24,7 @@ export default function SignUpScreen() {
     <View style={styles.container}>
       <View style={styles.imageContainer}>
         <Image 
-          source={require('../../assets/images/HomeBanner.webp')}
+          source={require('@/assets/images/HomeBanner.webp')}
           style={styles.image}
         />
         <TouchableOpacity 
