@@ -7,6 +7,12 @@ export default function FilesScreen() {
     const [searchQuery, setSearchQuery] = useState<string>('');
    }
 
+interface FileProps {
+    name: string;
+    size: string;
+    type: string;
+}
+
 const FileItem = ({ name, size, type }: FileProps) => (
  <TouchableOpacity style={styles.fileItem}>
    <Ionicons name="document" size={50} color="#666" />
@@ -22,7 +28,13 @@ const styles = StyleSheet.create({
         padding: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#ccc',
+    },
+    fileName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    fileSize: {
+        fontSize: 12,
     }
 });
-
 
