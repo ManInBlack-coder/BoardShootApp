@@ -1,24 +1,32 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from "react";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
 import { useEffect } from 'react';
 import FilesScreen from "./FilesScreen";
 
 
 interface FolderProps {
  name: string;
- count: number;
+ count: number; 
+ files?: Array<{name: string, size: string, type: string}>;
 }
 
 
-const FolderItem = ({ name, count }: FolderProps) => (
- <TouchableOpacity style={styles.folderItem} onPress={(FileItem) => {}}>
-   <Ionicons name="folder" size={50} color="#666" />
-   <Text style={styles.folderName}>{name}</Text>
-   <Text style={styles.folderCount}>{count}</Text>
- </TouchableOpacity>
-);
+const FolderItem = ({ name, count, files }: FolderProps) => {
+ const navigation = useNavigation<NavigationProp<ParamListBase>>();
+ 
+ return (
+   <TouchableOpacity 
+     style={styles.folderItem} 
+     onPress={() => navigation.navigate('Files', { folderName: name, files: files })}
+   >
+     <Ionicons name="folder" size={50} color="#666" />
+     <Text style={styles.folderName}>{name}</Text>
+     <Text style={styles.folderCount}>{count}</Text>
+   </TouchableOpacity>
+ );
+};
 
 
 export default function FoldersScreen() {
@@ -32,10 +40,42 @@ export default function FoldersScreen() {
 
 
  const folders = [
-   { name: "Mata", count: 120 },
-   { name: "Eesti keel", count: 60 },
-   { name: "Keemia", count: 70 },
-   { name: "Andmeanalüütika", count: 80 },
+   { 
+     name: "Mata", 
+     count: 120, 
+     files: [
+       { name: "Algebra", size: "2.3 MB", type: "pdf" },
+       { name: "Geomeetria", size: "1.8 MB", type: "docx" },
+       { name: "Statistika", size: "4.5 MB", type: "xlsx" },
+     ] 
+   },
+   { 
+     name: "Eesti keel", 
+     count: 60, 
+     files: [
+       { name: "Grammatika.pdf", size: "3.2 MB", type: "pdf" },
+       { name: "Kirjandus.docx", size: "2.1 MB", type: "docx" },
+     ] 
+   },
+   { 
+     name: "Keemia", 
+     count: 70, 
+     files: [
+       { name: "Elemendid.pdf", size: "5.7 MB", type: "pdf" },
+       { name: "Reaktsioonid.pptx", size: "8.3 MB", type: "pptx" },
+       { name: "Praktikum.docx", size: "1.2 MB", type: "docx" },
+     ] 
+   },
+   { 
+     name: "Andmeanalüütika", 
+     count: 80, 
+     files: [
+       { name: "Python_alused.pdf", size: "4.2 MB", type: "pdf" },
+       { name: "SQL_päringud.pdf", size: "3.1 MB", type: "pdf" },
+       { name: "Andmestik.xlsx", size: "9.6 MB", type: "xlsx" },
+       { name: "Visualiseerimine.pptx", size: "7.8 MB", type: "pptx" },
+     ] 
+   },
  ];
 
 

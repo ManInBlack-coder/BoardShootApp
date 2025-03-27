@@ -7,8 +7,10 @@ import SignInScreen from '../pages/SignInScreen';
 import CameraScreen from '../pages/CameraScreen';
 import SettingsScreen from '../pages/SettingsScreen';
 import FoldersScreen from '../pages/FoldersScreen';
+import FilesScreen from '../pages/FilesScreen';
 import MainScreen from '../pages/MainScreen';
 import { RootStackParamList } from '../types/types';
+import DocumentView from '../pages/DocumentView';
 
 
 
@@ -35,6 +37,8 @@ export default function App() {
       <Stack.Screen name="Camera" component={CameraScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Folders" component={FoldersScreen} />
+      <Stack.Screen name="Files" component={FilesScreen} />
+      <Stack.Screen name="DocumentView" component={DocumentView} />
       <Stack.Screen name="MainScreen" component={MainScreen} />
       
    </Stack.Navigator>
