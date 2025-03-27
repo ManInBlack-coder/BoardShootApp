@@ -1,16 +1,16 @@
 import { StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, View } from '@/components/Themed';
-import HomeScreen from '../pages/HomeScreen';
-import SignUpScreen from '../pages/SignUpScreen';
-import SignInScreen from '../pages/SignInScreen';
-import CameraScreen from '../pages/CameraScreen';
-import SettingsScreen from '../pages/SettingsScreen';
-import FoldersScreen from '../pages/FoldersScreen';
-import FilesScreen from '../pages/FilesScreen';
-import MainScreen from '../pages/MainScreen';
+import HomeScreen from '../pages/Starting/HomeScreen';
+import SignUpScreen from '../pages/Starting/SignUpScreen';
+import SignInScreen from '../pages/Starting/SignInScreen';
+import CameraScreen from '../pages/Camera/CameraScreen';
+import SettingsScreen from '../pages/Settings/SettingsScreen';
+import FoldersScreen from '../pages/Folders/FoldersScreen';
+import FilesScreen from '../pages/Folders/FilesScreen';
+import MainScreen from '../pages/General/MainScreen';
 import { RootStackParamList } from '../types/types';
-import DocumentView from '../pages/DocumentView';
+import DocumentView from '../pages/Folders/DocumentView';
 
 
 
