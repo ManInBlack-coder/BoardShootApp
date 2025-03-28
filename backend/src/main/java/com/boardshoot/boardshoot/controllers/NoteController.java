@@ -47,4 +47,36 @@ public class NoteController {
         }
         throw new RuntimeException("Note not found in the specified folder");
     }
+
+
+    @PutMapping("/{noteId}")
+    public Note updateNote(
+        @PathVariable Long folderId, 
+        @PathVariable Long noteId, 
+        @RequestBody Note updatedNote
+    ) {
+        Optional<Note> existingNoteOptional = noteRepository.findByFolderIdAndId(folderId, noteId);
+        if (existingNoteOptional.isPresent()) {
+            Note existingNote = existingNoteOptional.get();
+            existingNote.setTitle(updatedNote.getTitle());
+            existingNote.setTexts(updatedNote.getTexts());
+            existingNote.setImages(updatedNote.getImages());
+
+            return noteRepository.save(existingNote);
+        }
+        throw new RuntimeException("Note not found in the specified folder");
+    }
+
+    @DeleteMapping("/{noteId}")
+    public void deleteNote(
+        @PathVariable Long folderId, 
+        @PathVariable Long noteId
+    ) {
+        Optional<Note> note = noteRepository.findByFolderIdAndId(folderId, noteId);
+        if (note.isPresent()) {
+            noteRepository.delete(note.get());
+        } else {
+            throw new RuntimeException("Note not found in the specified folder");
+        }
+    }
 }

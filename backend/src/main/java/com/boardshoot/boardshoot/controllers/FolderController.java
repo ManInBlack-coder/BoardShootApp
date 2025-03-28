@@ -59,4 +59,40 @@ public class FolderController {
         }
         throw new RuntimeException("Folder not found");
     }
+
+     @PutMapping("/{folderId}")
+    public Folder updateFolder(
+        @PathVariable Long userId, 
+        @PathVariable Long folderId, 
+        @RequestBody Folder updatedFolder
+    ) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (!userOptional.isPresent()) {
+            throw new RuntimeException("User not found");
+        }
+        
+        Optional<Folder> existingFolderOptional = folderRepository.findByUserIdAndId(userId, folderId);
+        if (existingFolderOptional.isPresent()) {
+            Folder existingFolder = existingFolderOptional.get();
+            existingFolder.setName(updatedFolder.getName());
+
+            return folderRepository.save(existingFolder);
+        }
+        throw new RuntimeException("Folder not found");
+    }
+
+    @DeleteMapping("/{folderId}")
+    public void deleteFolder(@PathVariable Long userId, @PathVariable Long folderId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (!userOptional.isPresent()) {
+            throw new RuntimeException("User not found");
+        }
+
+        Optional<Folder> folder = folderRepository.findByUserIdAndId(userId, folderId);
+        if (folder.isPresent()) {
+            folderRepository.delete(folder.get());
+        } else {
+            throw new RuntimeException("Folder not found");
+        }
+    }
 }
