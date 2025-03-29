@@ -1,4 +1,4 @@
-package com.boardshoot.boardshoot.controller;
+package com.boardshoot.boardshoot.controllers;
 
 import com.boardshoot.boardshoot.model.Folder;
 import com.boardshoot.boardshoot.model.User;
