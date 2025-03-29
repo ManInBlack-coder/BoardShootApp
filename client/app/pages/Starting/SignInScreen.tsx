@@ -4,7 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/types/types';
 import React, { useState } from 'react';
-import HomeButton from "../components/HomeButton";
+import HomeButton from "../../components/HomeButton";
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
@@ -24,7 +24,7 @@ export default function SignInScreen() {
     <View style={styles.container}>
        <View style={styles.imageContainer}>
         <Image 
-          source={require('../../assets/images/HomeBanner.webp')}
+          source={require('@/assets/images/HomeBanner.webp')}
           style={styles.image}
         />
         <TouchableOpacity 

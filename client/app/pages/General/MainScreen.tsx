@@ -1,8 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import SettingsScreen from './SettingsScreen';
-import FoldersScreen from './FoldersScreen';
-import CameraScreen from './CameraScreen';
+import SettingsScreen from '../Settings/SettingsScreen';
+import FoldersScreen from '../Folders/FoldersScreen';
+import CameraScreen from '../Camera/CameraScreen';
 
 const Tab = createBottomTabNavigator();
 
