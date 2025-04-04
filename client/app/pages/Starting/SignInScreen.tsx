@@ -1,23 +1,46 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image} from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/types/types';
 import React, { useState } from 'react';
 import HomeButton from "../../components/HomeButton";
+import * as authService from '../../services/authService';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
 export default function SignInScreen() {
   const navigation = useNavigation<SignInScreenNavigationProp>();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-  const handleSignIn = () => {
-    // TODO: Implement sign in logic
-    console.log('Sign in:', { email, password });
-    navigation.navigate('MainScreen');
+  const handleSignIn = async () => {
+    // Valideerimine
+    if (!username || !password) {
+      Alert.alert("Viga", "Palun täida kõik väljad");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Kasuta autentimisteenust
+      await authService.login(username, password);
+      
+      // Suuna peaekraanile
+      navigation.navigate('MainScreen');
+    } catch (error) {
+      // Näita veateadet
+      if (error instanceof Error) {
+        Alert.alert("Viga sisselogimisel", error.message);
+      } else {
+        Alert.alert("Viga sisselogimisel", "Midagi läks valesti. Proovi uuesti.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -41,20 +64,19 @@ export default function SignInScreen() {
 
       <View style={styles.form}>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>E-mail</Text>
+          <Text style={styles.label}>Kasutajanimi</Text>
           <TextInput 
             style={styles.input}
-            placeholder="example@gmail.com"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
+            placeholder="Sinu kasutajanimi"
+            value={username}
+            onChangeText={setUsername}
             autoCapitalize="none"
             placeholderTextColor="#999"
           />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>Parool</Text>
           <View style={styles.passwordContainer}>
             <TextInput 
               style={[styles.input, styles.passwordInput]}
@@ -78,16 +100,21 @@ export default function SignInScreen() {
         </View>
 
         <TouchableOpacity 
-          style={styles.signInButton}
+          style={[styles.signInButton, isLoading && styles.disabledButton]}
           onPress={handleSignIn}
+          disabled={isLoading}
         >
-         <HomeButton  title="Sign In" onPress={() => navigation.navigate('MainScreen')} />
-         </TouchableOpacity>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.signInButtonText}>Logi sisse</Text>
+          )}
+        </TouchableOpacity>
 
-         <View style={styles.signUpContainer}>
-          <Text style={styles.signUpText}>Already have an account? </Text>
+        <View style={styles.signUpContainer}>
+          <Text style={styles.signUpText}>Puudub konto? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-            <Text style={styles.signUpLink}>Sign In</Text>
+            <Text style={styles.signUpLink}>Registreeri</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -165,10 +192,14 @@ const styles = StyleSheet.create({
     top: 12,
   },
   signInButton: {
+    backgroundColor: '#C28D00',
     borderRadius: 25,
     padding: 15,
     alignItems: 'center',
     marginTop: 20,
+  },
+  disabledButton: {
+    backgroundColor: '#9e7100',
   },
   signInButtonText: {
     color: '#fff',
