@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, Alert } from "react-native";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import * as authService from '../../services/authService';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/app/types/types';
+
+type SettingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
 export default function SettingsScreen() {
+  const navigation = useNavigation<SettingsScreenNavigationProp>();
   const [name, setName] = useState('Rannu68');
   const [email, setEmail] = useState('Rannu@gmail.com');
   const [isEditingName, setIsEditingName] = useState(false); 
@@ -31,6 +38,18 @@ export default function SettingsScreen() {
 
   const toggleDayNightMode = () => {
     setIsDayMode(prevState => !prevState); // Toggle between day and night mode
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      // Navigeeri tagasi kodulehele
+      navigation.navigate('Home');
+      Alert.alert("Edu", "Oled edukalt välja logitud");
+    } catch (error) {
+      console.error('Logout error:', error);
+      Alert.alert("Viga", "Väljalogimise ajal tekkis viga");
+    }
   };
 
   return (
@@ -106,6 +125,12 @@ export default function SettingsScreen() {
           </View>
           <FontAwesome name="moon-o" size={25} color="white" style={styles.moonIcon} />
         </View>
+      </TouchableOpacity>
+
+      {/* Logout Button */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <FontAwesome name="sign-out" size={20} color="white" style={styles.logoutIcon} />
+        <Text style={styles.logoutButtonText}>Logi välja</Text>
       </TouchableOpacity>
     </View>
   );
@@ -236,5 +261,25 @@ const styles = StyleSheet.create({
     top: 5,
     marginLeft: 10,
     marginRight: 10,
+  },
+  // Logout Button styles
+  logoutButton: {
+    width: 300,
+    height: 50,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#C93838', // Punane värv väljalogimise nupule
+    marginTop: 30,
+    borderRadius: 5,
+  },
+  logoutButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+    marginLeft: 10,
+  },
+  logoutIcon: {
+    marginRight: 5,
   }
 });

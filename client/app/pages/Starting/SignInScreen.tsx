@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/types/types';
-import React, { useState } from 'react';
+import * as React from 'react';
 import HomeButton from "../../components/HomeButton";
 import * as authService from '../../services/authService';
 
@@ -11,10 +11,10 @@ type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 
 
 export default function SignInScreen() {
   const navigation = useNavigation<SignInScreenNavigationProp>();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
   
   const handleSignIn = async () => {
     // Valideerimine
