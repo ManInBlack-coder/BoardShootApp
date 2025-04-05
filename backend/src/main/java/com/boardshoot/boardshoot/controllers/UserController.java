@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
@@ -44,6 +45,30 @@ public class UserController {
             existingUser.setUsername(userDetails.getUsername());
             existingUser.setPassword(userDetails.getPassword());
             existingUser.setEmail(userDetails.getEmail());
+            return userRepository.save(existingUser);
+        }
+        throw new RuntimeException("User not found");
+    }
+    
+    /**
+     * Eraldi endpoint kasutaja profiili uuendamiseks, mis ei muuda parooli
+     */
+    @PutMapping("/{id}/profile")
+    public User updateUserProfile(@PathVariable Long id, @RequestBody Map<String, String> profileDetails) {
+        Optional<User> userOptional = userRepository.findById(id);
+        if (userOptional.isPresent()) {
+            User existingUser = userOptional.get();
+            
+            // Uuendame ainult kasutajanime ja e-posti, kui need on saadetud
+            if (profileDetails.containsKey("username")) {
+                existingUser.setUsername(profileDetails.get("username"));
+            }
+            
+            if (profileDetails.containsKey("email")) {
+                existingUser.setEmail(profileDetails.get("email"));
+            }
+            
+            // Ei muuda parooli
             return userRepository.save(existingUser);
         }
         throw new RuntimeException("User not found");

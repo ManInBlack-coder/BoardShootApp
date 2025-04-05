@@ -199,4 +199,45 @@ export const getToken = async (): Promise<string | null> => {
     console.error('Get token error:', error);
     return null;
   }
+};
+
+/**
+ * Kasutaja andmete uuendamine
+ */
+export const updateUserProfile = async (userId: number, username: string, email: string): Promise<User> => {
+  try {
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+    
+    // Kasutame uut /profile endpointi, mis ei muuda parooli
+    const response = await fetch(`${API_URL}/users/${userId}/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        username,
+        email
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(errorData || 'Failed to update profile');
+    }
+
+    const updatedUser = await response.json() as User;
+    
+    // Uuendame salvestatud kasutaja info
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+    
+    return updatedUser;
+  } catch (error) {
+    console.error('Update profile error:', error);
+    throw error;
+  }
 }; 
