@@ -1,23 +1,64 @@
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Image, Alert, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, {useState} from "react";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/types/types'
-import HomeScreen from "./HomeScreen";
+import * as authService from '../../services/authService';
+
 type SingUpScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignUp'>;
 
 export default function SignUpScreen() {
   const navigation = useNavigation<SingUpScreenNavigationProp>();
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
   
-  const handleRegister = () => {
-    // TODO: Implement registration logic
-    console.log('Register:', { name, email, password, agreeToTerms });
+  const handleRegister = async () => {
+    // Valideerimine
+    if (!username || !email || !password) {
+      Alert.alert("Viga", "Palun täida kõik väljad");
+      return;
+    }
+    
+    if (!agreeToTerms) {
+      Alert.alert("Viga", "Kasutustingimustega nõustumine on vajalik");
+      return;
+    }
+    
+    // Lihtne e-posti valideerimine
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Viga", "Palun sisesta korrektne e-posti aadress");
+      return;
+    }
+    
+    // Lihtne parooli tugevuse kontroll
+    if (password.length < 6) {
+      Alert.alert("Viga", "Parool peab olema vähemalt 6 märki pikk");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Kasuta autentimisteenust
+      await authService.register(username, email, password);
+      
+      // Suuna peaekraanile eduka registreerimise järel
+      navigation.navigate('MainScreen');
+    } catch (error) {
+      // Näita veateadet
+      if (error instanceof Error) {
+        Alert.alert("Viga registreerimisel", error.message);
+      } else {
+        Alert.alert("Viga registreerimisel", "Midagi läks valesti. Proovi uuesti.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -32,7 +73,7 @@ export default function SignUpScreen() {
           onPress={() => navigation.navigate('Home')}
         >
           <Ionicons name="arrow-back" size={24}   color="#FFFFFF" />
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>Tagasi</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <Text style={styles.title}>BOARDSHOOT</Text>
@@ -41,21 +82,22 @@ export default function SignUpScreen() {
 
       <View style={styles.form}>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Name</Text>
+          <Text style={styles.label}>Kasutajanimi</Text>
           <TextInput
             style={styles.input}
-            placeholder="John Doe"
-            value={name}
-            onChangeText={setName}
+            placeholder="Sinu kasutajanimi"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
             placeholderTextColor="#999"
           />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>E-post</Text>
           <TextInput
             style={styles.input}
-            placeholder="example@gmail.com"
+            placeholder="sinu@email.com"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -65,7 +107,7 @@ export default function SignUpScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>Parool</Text>
           <TextInput
             style={styles.input}
             placeholder="••••••••••"
@@ -84,21 +126,26 @@ export default function SignUpScreen() {
             {agreeToTerms && <Ionicons name="checkmark" size={18} color="#fff" />}
           </View>
           <Text style={styles.termsText}>
-            I agree with <Text style={styles.termsLink}>Terms & Privacy</Text>
+            Nõustun <Text style={styles.termsLink}>kasutustingimustega</Text>
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={styles.registerButton}
+          style={[styles.registerButton, isLoading && styles.disabledButton]}
           onPress={handleRegister}
+          disabled={isLoading}
         >
-          <Text style={styles.registerButtonText}>Register</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.registerButtonText}>Registreeri</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.signInContainer}>
-          <Text style={styles.signInText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Home')}>
-            <Text style={styles.signInLink}>Sign In</Text>
+          <Text style={styles.signInText}>Juba on konto? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
+            <Text style={styles.signInLink}>Logi sisse</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -174,6 +221,9 @@ const styles = StyleSheet.create({
     padding: 15,
     alignItems: 'center',
     marginBottom: 20,
+  },
+  disabledButton: {
+    backgroundColor: '#9e7100',
   },
   registerButtonText: {
     color: '#fff',
