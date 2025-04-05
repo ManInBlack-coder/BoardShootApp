@@ -1,98 +1,66 @@
 package com.boardshoot.boardshoot.controllers;
 
 import com.boardshoot.boardshoot.model.Folder;
-import com.boardshoot.boardshoot.model.User;
-import com.boardshoot.boardshoot.repository.FolderRepository;
-import com.boardshoot.boardshoot.repository.UserRepository;
+import com.boardshoot.boardshoot.service.FolderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/users/{userId}/folders")
+@RequestMapping("/api/folders")
+@CrossOrigin(origins = "*")
 public class FolderController {
-
+    
+    private static final Logger logger = LoggerFactory.getLogger(FolderController.class);
+    
     @Autowired
-    private FolderRepository folderRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @PostMapping
-    public Folder createFolder(@PathVariable Long userId, @RequestBody Folder folder) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isPresent()) {
-            folder.setUser(user.get());
-            return folderRepository.save(folder);
-        }
-        throw new RuntimeException("User not found");
-    }
-
+    private FolderService folderService;
+    
     @GetMapping
-    public List<Folder> getFoldersByUser(@PathVariable Long userId) {
-        return folderRepository.findByUserId(userId);
+    public ResponseEntity<List<Folder>> getFolders() {
+        try {
+            logger.info("Getting folders");
+            List<Folder> folders = folderService.getCurrentUserFolders();
+            logger.info("Retrieved {} folders", folders.size());
+            return ResponseEntity.ok(folders);
+        } catch (Exception e) {
+            logger.error("Error getting folders", e);
+            throw e;
+        }
     }
-    @GetMapping("/name/{folderName}")
-    public Folder getFolderByUserAndName(@PathVariable Long userId, @PathVariable String folderName) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (!userOptional.isPresent()) {
-            throw new RuntimeException("User not found");
+    
+    @PostMapping
+    public ResponseEntity<Folder> createFolder(@RequestBody CreateFolderRequest request) {
+        try {
+            logger.info("Creating folder with name: {}", request.getName());
+            Folder folder = folderService.createFolder(request.getName());
+            logger.info("Created folder with id: {}", folder.getId());
+            return ResponseEntity.ok(folder);
+        } catch (Exception e) {
+            logger.error("Error creating folder", e);
+            throw e;
         }
-        Optional<Folder> folder = folderRepository.findByUserAndName(userOptional.get(), folderName);
-        if (folder.isPresent()) {
-            return folder.get();
-        }
-        throw new RuntimeException("Folder not found");
     }
-
-    @GetMapping("/{folderId}")
-    public Folder getFolderByUserAndId(@PathVariable Long userId, @PathVariable Long folderId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (!userOptional.isPresent()) {
-            throw new RuntimeException("User not found");
-        }
-        Optional<Folder> folder = folderRepository.findByUserIdAndId(userId, folderId);
-        if (folder.isPresent()) {
-            return folder.get();
-        }
-        throw new RuntimeException("Folder not found");
+    
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        logger.info("Test endpoint called");
+        return ResponseEntity.ok("Server is running");
     }
-
-     @PutMapping("/{folderId}")
-    public Folder updateFolder(
-        @PathVariable Long userId, 
-        @PathVariable Long folderId, 
-        @RequestBody Folder updatedFolder
-    ) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (!userOptional.isPresent()) {
-            throw new RuntimeException("User not found");
+    
+    public static class CreateFolderRequest {
+        private String name;
+        
+        public String getName() {
+            return name;
         }
         
-        Optional<Folder> existingFolderOptional = folderRepository.findByUserIdAndId(userId, folderId);
-        if (existingFolderOptional.isPresent()) {
-            Folder existingFolder = existingFolderOptional.get();
-            existingFolder.setName(updatedFolder.getName());
-
-            return folderRepository.save(existingFolder);
-        }
-        throw new RuntimeException("Folder not found");
-    }
-
-    @DeleteMapping("/{folderId}")
-    public void deleteFolder(@PathVariable Long userId, @PathVariable Long folderId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (!userOptional.isPresent()) {
-            throw new RuntimeException("User not found");
-        }
-
-        Optional<Folder> folder = folderRepository.findByUserIdAndId(userId, folderId);
-        if (folder.isPresent()) {
-            folderRepository.delete(folder.get());
-        } else {
-            throw new RuntimeException("Folder not found");
+        public void setName(String name) {
+            this.name = name;
         }
     }
-}
+} 

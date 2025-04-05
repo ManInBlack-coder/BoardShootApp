@@ -1,82 +1,82 @@
 package com.boardshoot.boardshoot.controllers;
 
 import com.boardshoot.boardshoot.model.Note;
-import com.boardshoot.boardshoot.model.Folder;
-import com.boardshoot.boardshoot.repository.NoteRepository;
-import com.boardshoot.boardshoot.repository.FolderRepository;
+import com.boardshoot.boardshoot.service.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
-import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/users/{userId}/folders/{folderId}/notes")
+@RequestMapping("/api/folders/{folderId}/notes")
+@CrossOrigin(origins = "*")
 public class NoteController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(NoteController.class);
+    
     @Autowired
-    private NoteRepository noteRepository;
-
-    @Autowired
-    private FolderRepository folderRepository;
-
-    @PostMapping
-    public Note createNote(
-        @PathVariable Long folderId, 
-        @RequestBody Note note
-    ) {
-        Optional<Folder> folder = folderRepository.findById(folderId);
-        if (folder.isPresent()) {
-            note.setFolder(folder.get());
-            return noteRepository.save(note);
-        }
-        throw new RuntimeException("Folder not found");
-    }
-
+    private NoteService noteService;
+    
     @GetMapping
-    public List<Note> getNotesByFolder(@PathVariable Long folderId) {
-        return noteRepository.findByFolderId(folderId);
+    public ResponseEntity<List<Note>> getNotes(@PathVariable Long folderId) {
+        try {
+            logger.info("Getting notes for folder: {}", folderId);
+            List<Note> notes = noteService.getNotesForFolder(folderId);
+            logger.info("Retrieved {} notes", notes.size());
+            return ResponseEntity.ok(notes);
+        } catch (Exception e) {
+            logger.error("Error getting notes for folder: {}", folderId, e);
+            throw e;
+        }
     }
-
+    
+    @PostMapping
+    public ResponseEntity<Note> createNote(@PathVariable Long folderId, @RequestBody CreateNoteRequest request) {
+        try {
+            logger.info("Creating note with title: {} for folder: {}", request.getTitle(), folderId);
+            Note note = noteService.createNote(folderId, request.getTitle(), request.getText());
+            logger.info("Created note with id: {}", note.getId());
+            return ResponseEntity.ok(note);
+        } catch (Exception e) {
+            logger.error("Error creating note for folder: {}", folderId, e);
+            throw e;
+        }
+    }
+    
     @GetMapping("/{noteId}")
-    public Note getNoteByFolderAndId(
-        @PathVariable Long folderId, 
-        @PathVariable Long noteId
-    ) {
-        Optional<Note> note = noteRepository.findByFolderIdAndId(folderId, noteId);
-        if (note.isPresent()) {
-            return note.get();
-        }
-        throw new RuntimeException("Note not found in the specified folder");
-    }
-
-
-    @PutMapping("/{noteId}")
-    public Note updateNote(
-        @PathVariable Long folderId, 
-        @PathVariable Long noteId, 
-        @RequestBody Note updatedNote
-    ) {
-        Optional<Note> existingNoteOptional = noteRepository.findByFolderIdAndId(folderId, noteId);
-        if (existingNoteOptional.isPresent()) {
-            Note existingNote = existingNoteOptional.get();
-            existingNote.setTitle(updatedNote.getTitle());
-            existingNote.setTexts(updatedNote.getTexts());
-            existingNote.setImages(updatedNote.getImages());
-
-            return noteRepository.save(existingNote);
-        }
-        throw new RuntimeException("Note not found in the specified folder");
-    }
-
-    @DeleteMapping("/{noteId}")
-    public void deleteNote(
-        @PathVariable Long folderId, 
-        @PathVariable Long noteId
-    ) {
-        Optional<Note> note = noteRepository.findByFolderIdAndId(folderId, noteId);
-        if (note.isPresent()) {
-            noteRepository.delete(note.get());
-        } else {
-            throw new RuntimeException("Note not found in the specified folder");
+    public ResponseEntity<Note> getNote(@PathVariable Long folderId, @PathVariable Long noteId) {
+        try {
+            logger.info("Getting note: {} from folder: {}", noteId, folderId);
+            Note note = noteService.getNote(noteId);
+            logger.info("Retrieved note: {}", note.getId());
+            return ResponseEntity.ok(note);
+        } catch (Exception e) {
+            logger.error("Error getting note: {} from folder: {}", noteId, folderId, e);
+            throw e;
         }
     }
-}
+    
+    public static class CreateNoteRequest {
+        private String title;
+        private String text;
+        
+        public String getTitle() {
+            return title;
+        }
+        
+        public void setTitle(String title) {
+            this.title = title;
+        }
+        
+        public String getText() {
+            return text;
+        }
+        
+        public void setText(String text) {
+            this.text = text;
+        }
+    }
+} 

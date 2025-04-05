@@ -1,125 +1,168 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
-import { useEffect } from 'react';
-import FilesScreen from "./FilesScreen";
-
+import axiosInstance from '../../config/axios';
 
 interface FolderProps {
- name: string;
- count: number; 
- files?: Array<{name: string, size: string, type: string}>;
+  id: number;
+  name: string;
+  count: number;
 }
 
-
-const FolderItem = ({ name, count, files }: FolderProps) => {
- const navigation = useNavigation<NavigationProp<ParamListBase>>();
- 
- return (
-   <TouchableOpacity 
-     style={styles.folderItem} 
-     onPress={() => navigation.navigate('Files', { folderName: name, files: files })}
-   >
-     <Ionicons name="folder" size={50} color="#666" />
-     <Text style={styles.folderName}>{name}</Text>
-     <Text style={styles.folderCount}>{count}</Text>
-   </TouchableOpacity>
- );
+const FolderItem = ({ id, name, count }: FolderProps) => {
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
+  
+  return (
+    <TouchableOpacity 
+      style={styles.folderItem} 
+      onPress={() => navigation.navigate('Files', { folderId: id, folderName: name })}
+    >
+      <Ionicons name="folder" size={50} color="#666" />
+      <Text style={styles.folderName}>{name}</Text>
+      <Text style={styles.folderCount}>{count}</Text>
+    </TouchableOpacity>
+  );
 };
 
-
 export default function FoldersScreen() {
- const [isSearchVisible, setIsSearchVisible] = useState(false);
- const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [folders, setFolders] = useState<FolderProps[]>([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    fetchFolders();
+  }, []);
 
- const toggleSearch = () => {
-   setIsSearchVisible(!isSearchVisible);
- };
+  const fetchFolders = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.get('/api/folders');
+      const foldersWithCount = response.data.map((folder: any) => ({
+        ...folder,
+        count: folder.count || 0 // Kui count pole määratud, kasutame 0
+      }));
+      setFolders(foldersWithCount);
+    } catch (error) {
+      console.error('Error fetching folders:', error);
+      setError('Ei saanud kaustu laadida. Palun proovige hiljem uuesti.');
+      Alert.alert('Viga', 'Ei saanud kaustu laadida. Palun proovige hiljem uuesti.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  const createNewFolder = async () => {
+    if (!newFolderName.trim()) return;
 
- const folders = [
-   { 
-     name: "Mata", 
-     count: 120, 
-     files: [
-       { name: "Algebra", size: "2.3 MB", type: "pdf" },
-       { name: "Geomeetria", size: "1.8 MB", type: "docx" },
-       { name: "Statistika", size: "4.5 MB", type: "xlsx" },
-     ] 
-   },
-   { 
-     name: "Eesti keel", 
-     count: 60, 
-     files: [
-       { name: "Grammatika.pdf", size: "3.2 MB", type: "pdf" },
-       { name: "Kirjandus.docx", size: "2.1 MB", type: "docx" },
-     ] 
-   },
-   { 
-     name: "Keemia", 
-     count: 70, 
-     files: [
-       { name: "Elemendid.pdf", size: "5.7 MB", type: "pdf" },
-       { name: "Reaktsioonid.pptx", size: "8.3 MB", type: "pptx" },
-       { name: "Praktikum.docx", size: "1.2 MB", type: "docx" },
-     ] 
-   },
-   { 
-     name: "Andmeanalüütika", 
-     count: 80, 
-     files: [
-       { name: "Python_alused.pdf", size: "4.2 MB", type: "pdf" },
-       { name: "SQL_päringud.pdf", size: "3.1 MB", type: "pdf" },
-       { name: "Andmestik.xlsx", size: "9.6 MB", type: "xlsx" },
-       { name: "Visualiseerimine.pptx", size: "7.8 MB", type: "pptx" },
-     ] 
-   },
- ];
+    try {
+      const response = await axiosInstance.post('/api/folders', { name: newFolderName });
+      setNewFolderName('');
+      setIsModalVisible(false);
+      fetchFolders(); // Refresh folders list
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      Alert.alert('Viga', 'Ei saanud kausta luua. Palun proovige hiljem uuesti.');
+    }
+  };
 
+  const toggleSearch = () => {
+    setIsSearchVisible(!isSearchVisible);
+  };
 
- const filteredFolders = folders.filter(folder => {
-   return folder.name.toLowerCase().includes(searchQuery.toLowerCase());
- });
+  const filteredFolders = folders.filter(folder => {
+    return folder.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity onPress={toggleSearch} style={styles.searchIcon}>
+            <Ionicons name="search" size={28} color="white" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Folders</Text>
+          <TouchableOpacity onPress={() => setIsModalVisible(true)} style={styles.addButton}>
+            <Ionicons name="add" size={28} color="white" />
+          </TouchableOpacity>
+        </View>
+        
+        {isSearchVisible && (
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search folders..."
+              autoFocus
+              value={searchQuery}
+              onChangeText={text => setSearchQuery(text)}
+            />
+          </View>
+        )}
+      </View>
 
- return (
-   <View style={styles.container}>
-     <View style={styles.header}>
-       <View style={styles.headerContent}>
-         <TouchableOpacity onPress={toggleSearch} style={styles.searchIcon}>
-           <Ionicons name="search" size={28} color="white" />
-         </TouchableOpacity>
-         <Text style={styles.title}>Folders</Text>
-         <View style={{ width: 28 }} />
-       </View>
-      
-       {isSearchVisible && (
-         <View style={styles.searchContainer}>
-           <TextInput
-             style={styles.searchInput}
-             placeholder="Search folders..."
-             autoFocus
-             value={searchQuery}
-             onChangeText={text => setSearchQuery(text)}
-           />
-         </View>
-       )}
-     </View>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#005A2C" />
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchFolders}>
+            <Text style={styles.retryButtonText}>Proovi uuesti</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.gridContainer}>
+            {filteredFolders.map((folder) => (
+              <FolderItem key={folder.id} {...folder} />
+            ))}
+          </View>
+        </ScrollView>
+      )}
 
-
-     <ScrollView style={styles.scrollView}>
-       <View style={styles.gridContainer}>
-         {filteredFolders.map((folder, index) => (
-           <FolderItem key={index} {...folder} />
-         ))}
-       </View>
-     </ScrollView>
-   </View>
- );
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Create New Folder</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter folder name"
+              value={newFolderName}
+              onChangeText={setNewFolderName}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setIsModalVisible(false);
+                  setNewFolderName('');
+                }}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.createButton]}
+                onPress={createNewFolder}
+              >
+                <Text style={styles.buttonText}>Create</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
 }
-
 
 const styles = StyleSheet.create({
  container: {
@@ -204,6 +247,80 @@ const styles = StyleSheet.create({
    height: 40,
    alignItems: 'center',
    justifyContent: 'center',
+ },
+ addButton: {
+   padding: 4,
+ },
+ modalContainer: {
+   flex: 1,
+   justifyContent: 'center',
+   alignItems: 'center',
+   backgroundColor: 'rgba(0, 0, 0, 0.5)',
+ },
+ modalContent: {
+   backgroundColor: 'white',
+   padding: 20,
+   borderRadius: 10,
+   width: '80%',
+ },
+ modalTitle: {
+   fontSize: 20,
+   fontWeight: 'bold',
+   marginBottom: 15,
+   textAlign: 'center',
+ },
+ modalInput: {
+   borderWidth: 1,
+   borderColor: '#ccc',
+   borderRadius: 5,
+   padding: 10,
+   marginBottom: 15,
+ },
+ modalButtons: {
+   flexDirection: 'row',
+   justifyContent: 'space-between',
+ },
+ modalButton: {
+   padding: 10,
+   borderRadius: 5,
+   width: '45%',
+ },
+ cancelButton: {
+   backgroundColor: '#ff6b6b',
+ },
+ createButton: {
+   backgroundColor: '#005A2C',
+ },
+ buttonText: {
+   color: 'white',
+   textAlign: 'center',
+   fontWeight: 'bold',
+ },
+ loadingContainer: {
+   flex: 1,
+   justifyContent: 'center',
+   alignItems: 'center',
+ },
+ errorContainer: {
+   flex: 1,
+   justifyContent: 'center',
+   alignItems: 'center',
+   padding: 20,
+ },
+ errorText: {
+   fontSize: 16,
+   color: '#e74c3c',
+   textAlign: 'center',
+   marginBottom: 15,
+ },
+ retryButton: {
+   backgroundColor: '#005A2C',
+   padding: 10,
+   borderRadius: 5,
+ },
+ retryButtonText: {
+   color: 'white',
+   fontWeight: 'bold',
  },
 });
 
