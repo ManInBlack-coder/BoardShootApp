@@ -1,10 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '@/app/config/constants';
+import { API_URL, TOKEN_KEY, USER_KEY } from '@/app/config/constants';
 import axiosInstance from '../config/axios';
-
-// Token salvestamise võti
-const TOKEN_KEY = 'board_shoot_auth_token';
-const USER_KEY = 'board_shoot_user';
 
 // Kasutaja tüüp
 export type User = {

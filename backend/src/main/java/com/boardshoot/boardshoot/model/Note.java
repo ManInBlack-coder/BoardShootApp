@@ -35,7 +35,8 @@ public class Note {
         name = "note_images",
         joinColumns = @JoinColumn(name = "note_id")
     )
-    @Column(name = "image")
+    @Lob // Märgime, et tegu on suure binaarse objektiga
+    @Column(name = "image", columnDefinition = "bytea") // PostgreSQL-spetsiifiline tüübi määramine
     private List<byte[]> images = new ArrayList<>();
     
     public Long getId() {
