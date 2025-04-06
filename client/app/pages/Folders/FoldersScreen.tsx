@@ -43,10 +43,14 @@ export default function FoldersScreen() {
     setIsLoading(true);
     try {
       const response = await axiosInstance.get('/api/folders');
+      console.log('Server response:', response.data);
+      
       const foldersWithCount = response.data.map((folder: any) => ({
-        ...folder,
-        count: folder.count || 0 // Kui count pole määratud, kasutame 0
+        id: folder.id,
+        name: folder.name,
+        count: folder.notes?.length || 0 // Kui notes pole määratud, kasutame 0
       }));
+      
       setFolders(foldersWithCount);
     } catch (error) {
       console.error('Error fetching folders:', error);
@@ -62,9 +66,11 @@ export default function FoldersScreen() {
 
     try {
       const response = await axiosInstance.post('/api/folders', { name: newFolderName });
+      console.log('Created folder:', response.data);
+      
       setNewFolderName('');
       setIsModalVisible(false);
-      fetchFolders(); // Refresh folders list
+      fetchFolders(); // Värskendame kaustade loetelu
     } catch (error) {
       console.error('Error creating folder:', error);
       Alert.alert('Viga', 'Ei saanud kausta luua. Palun proovige hiljem uuesti.');

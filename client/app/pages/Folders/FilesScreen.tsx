@@ -63,14 +63,17 @@ export default function FilesScreen() {
         setError(null);
         try {
             const response = await axiosInstance.get(`/api/folders/${folderId}/notes`);
-            // Failide andmete formaatimine vajadusel
+            console.log('Server response (notes):', response.data);
+            
+            // Failide andmete formaatimine
             const formattedFiles = response.data.map((note: any) => ({
                 id: note.id,
                 title: note.title || 'Untitled',
-                created_at: note.created_at || new Date().toISOString().split('T')[0],
+                created_at: new Date().toISOString().split('T')[0], // Võib olla vaja serveri vastusest võtta
                 type: 'txt', // Vaikimisi tüüp
-                size: note.size || '0 KB'
+                size: `${note.texts?.length || 0} KB` // Lihtne suurus tekstide arvu järgi
             }));
+            
             setFiles(formattedFiles);
         } catch (error) {
             console.error('Error fetching files:', error);
@@ -97,11 +100,14 @@ export default function FilesScreen() {
         if (!newFileName.trim()) return;
 
         try {
-            // Loome märkuse ilma piltideta esialgu
-            await axiosInstance.post(`/api/folders/${folderId}/notes`, {
+            // Loome märkuse
+            const response = await axiosInstance.post(`/api/folders/${folderId}/notes`, {
                 title: newFileName,
                 text: newFileContent
             });
+            
+            console.log('Created note:', response.data);
+            
             setNewFileName('');
             setNewFileContent('');
             setIsModalVisible(false);
@@ -152,9 +158,21 @@ export default function FilesScreen() {
             ) : (
                 <ScrollView style={styles.scrollView}>
                     <View style={styles.filesContainer}>
-                        {filteredFiles.map((file) => (
-                            <FileItem key={file.id} {...file} />
-                        ))}
+                        {filteredFiles.length > 0 ? (
+                            filteredFiles.map((file) => (
+                                <FileItem key={file.id} {...file} />
+                            ))
+                        ) : (
+                            <View style={styles.emptyContainer}>
+                                <Text style={styles.emptyText}>Selles kaustas pole veel faile</Text>
+                                <TouchableOpacity 
+                                    style={styles.createFirstButton}
+                                    onPress={handleAddFile}
+                                >
+                                    <Text style={styles.createFirstButtonText}>Lisa esimene fail</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
                     </View>
                 </ScrollView>
             )}
@@ -270,6 +288,26 @@ const styles = StyleSheet.create({
     fileSize: {
         fontSize: 12,
         color: '#666',
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 40,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#666',
+        marginBottom: 20,
+    },
+    createFirstButton: {
+        backgroundColor: '#005A2C',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+    },
+    createFirstButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
     },
     addButton: {
         padding: 4,
