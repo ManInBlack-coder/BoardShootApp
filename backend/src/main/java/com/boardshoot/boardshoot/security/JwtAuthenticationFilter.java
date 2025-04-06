@@ -42,6 +42,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     logger.info("Username from token: {}", username);
 
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    
+                    if (userDetails instanceof UserDetailsImpl) {
+                        logger.info("Loaded UserDetailsImpl with ID: {}", ((UserDetailsImpl) userDetails).getId());
+                    } else {
+                        logger.warn("UserDetails is not an instance of UserDetailsImpl");
+                    }
+                    
                     UsernamePasswordAuthenticationToken authentication = 
                         new UsernamePasswordAuthenticationToken(
                             userDetails, 

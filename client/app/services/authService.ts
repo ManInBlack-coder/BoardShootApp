@@ -1,9 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '@/app/config/constants';
-
-// Token salvestamise võti
-const TOKEN_KEY = 'board_shoot_auth_token';
-const USER_KEY = 'board_shoot_user';
+import { API_URL, TOKEN_KEY, USER_KEY } from '@/app/config/constants';
+import axiosInstance from '../config/axios';
 
 // Kasutaja tüüp
 export type User = {
@@ -74,44 +71,49 @@ export const login = async (username: string, password: string): Promise<User> =
     console.log(`Sending login request to ${API_URL}/auth/login`);
     console.log('Login payload:', { username, password: '******' });
     
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
+    // Kasuta fetch asemel axiose instantsi
+    const response = await axiosInstance.post('/auth/login', {
+      username,
+      password,
+    }, {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({
-        username,
-        password,
-      }),
+      // Luba CORS päringud
+      withCredentials: false,
+      // Pikendame timeout'i
+      timeout: 30000,
     });
 
     console.log('Login response status:', response.status);
+    console.log('Login response data:', JSON.stringify(response.data, null, 2));
     
-    const responseText = await response.text();
-    console.log('Login response:', responseText);
-    
-    if (!response.ok) {
-      throw new Error(responseText || 'Login failed');
-    }
-
-    // Proovime vastust JSON-ina parsida
-    let data;
-    try {
-      data = JSON.parse(responseText) as AuthResponse;
-    } catch (e) {
-      console.error('Failed to parse JSON:', e);
-      throw new Error('Server response format error');
-    }
+    const data = response.data as AuthResponse;
     
     // Salvestame tokeni ja kasutaja info
     await AsyncStorage.setItem(TOKEN_KEY, data.token);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(data.user));
     
     return data.user;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    throw error;
+    
+    // Detailsem veatöötlus
+    if (error.response) {
+      // Server vastas, aga koodiga väljaspool 2xx vahemikku
+      console.log('Error response data:', error.response.data);
+      console.log('Error response status:', error.response.status);
+      throw new Error(error.response.data?.message || `Server vastus: ${error.response.status}`);
+    } else if (error.request) {
+      // Päring tehti, aga vastust ei saadud
+      console.log('No response received:', error.request);
+      throw new Error('Server ei vastanud. Kontrollige, kas server on käivitatud aadressil ' + API_URL);
+    } else {
+      // Midagi läks valesti päringu koostamise ajal
+      console.log('Error message:', error.message);
+      throw new Error(`Võrgu viga: ${error.message}`);
+    }
   }
 };
 

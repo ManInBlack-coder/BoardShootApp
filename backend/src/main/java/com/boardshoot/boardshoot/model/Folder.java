@@ -4,8 +4,11 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
 
+@Data
 @Entity
+@Table(name = "folder")
 public class Folder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
