@@ -1,8 +1,9 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect } from "react";
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import axiosInstance from '../../config/axios';
+import { RootStackParamList } from '../../types/types';
 
 interface FileProps {
     id: number;
@@ -20,31 +21,53 @@ type FilesScreenRouteProp = RouteProp<{
     }
 }, 'Files'>;
 
-const FileItem = ({ title, size, type }: FileProps) => (
-    <TouchableOpacity style={styles.fileItem}>
-        <Ionicons 
-            name={
-                type === "pdf" ? "document-text" :
-                type === "docx" ? "document-text" :
-                type === "xlsx" ? "document" :
-                type === "pptx" ? "document" :
-                "document"
-            } 
-            size={40} 
-            color="#666" 
-        />
-        <View style={styles.fileInfo}>
-            <Text style={styles.fileName}>{title}</Text>
-            <Text style={styles.fileSize}>{size}</Text>
-        </View>
-    </TouchableOpacity>
-);
+const FileItem = ({ id, title, size, type, onLongPress }: FileProps & { id: number, onLongPress: (file: FileProps) => void }) => {
+    const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+    const route = useRoute<FilesScreenRouteProp>();
+    const { folderId } = route.params;
+    
+    const handlePress = () => {
+        // Navigeerimine DocumentView'sse
+        navigation.navigate('Document', {
+            folderId,
+            noteId: id,
+            title
+        });
+    };
+    
+    return (
+        <TouchableOpacity 
+            style={styles.fileItem} 
+            onPress={handlePress}
+            onLongPress={() => onLongPress({ id, title, size, type, created_at: '' })}
+            delayLongPress={500}
+        >
+            <Ionicons 
+                name={
+                    type === "pdf" ? "document-text" :
+                    type === "docx" ? "document-text" :
+                    type === "xlsx" ? "document" :
+                    type === "pptx" ? "document" :
+                    "document"
+                } 
+                size={40} 
+                color="#666" 
+            />
+            <View style={styles.fileInfo}>
+                <Text style={styles.fileName}>{title}</Text>
+                <Text style={styles.fileSize}>{size}</Text>
+            </View>
+        </TouchableOpacity>
+    );
+};
 
 export default function FilesScreen() {
     const [isSearchVisible, setIsSearchVisible] = useState(false);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [files, setFiles] = useState<FileProps[]>([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<FileProps | null>(null);
     const [newFileName, setNewFileName] = useState('');
     const [newFileContent, setNewFileContent] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -118,6 +141,29 @@ export default function FilesScreen() {
         }
     };
     
+    const handleLongPressFile = (file: FileProps) => {
+        setSelectedFile(file);
+        setIsDeleteModalVisible(true);
+    };
+    
+    const deleteFile = async () => {
+        if (!selectedFile) return;
+        
+        try {
+            const response = await axiosInstance.delete(`/api/folders/${folderId}/notes/${selectedFile.id}`);
+            console.log('Deleted file:', response.data);
+            
+            setIsDeleteModalVisible(false);
+            setSelectedFile(null);
+            fetchFiles(); // Värskendame failide nimekirja
+            
+            Alert.alert('Õnnestus', 'Fail on kustutatud.');
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            Alert.alert('Viga', 'Ei saanud faili kustutada. Palun proovige hiljem uuesti.');
+        }
+    };
+    
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -126,8 +172,8 @@ export default function FilesScreen() {
                         <Ionicons name="arrow-back" size={28} color="white" />
                     </TouchableOpacity>
                     <Text style={styles.title}>{folderName}</Text>
-                    <TouchableOpacity onPress={handleAddFile} style={styles.addButton}>
-                        <Ionicons name="add" size={28} color="white" />
+                    <TouchableOpacity onPress={toggleSearch} style={styles.searchIcon}>
+                        <Ionicons name="search" size={28} color="white" />
                     </TouchableOpacity>
                 </View>
                 
@@ -160,7 +206,11 @@ export default function FilesScreen() {
                     <View style={styles.filesContainer}>
                         {filteredFiles.length > 0 ? (
                             filteredFiles.map((file) => (
-                                <FileItem key={file.id} {...file} />
+                                <FileItem 
+                                    key={file.id} 
+                                    {...file} 
+                                    onLongPress={handleLongPressFile}
+                                />
                             ))
                         ) : (
                             <View style={styles.emptyContainer}>
@@ -176,6 +226,13 @@ export default function FilesScreen() {
                     </View>
                 </ScrollView>
             )}
+            
+            <TouchableOpacity 
+                style={styles.floatingAddButton}
+                onPress={handleAddFile}
+            >
+                <Ionicons name="add" size={32} color="white" />
+            </TouchableOpacity>
 
             <Modal
                 visible={isModalVisible}
@@ -184,16 +241,16 @@ export default function FilesScreen() {
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Create New File</Text>
+                        <Text style={styles.modalTitle}>Loo uus fail</Text>
                         <TextInput
                             style={styles.modalInput}
-                            placeholder="Enter file name"
+                            placeholder="Sisesta faili nimi"
                             value={newFileName}
                             onChangeText={setNewFileName}
                         />
                         <TextInput
                             style={[styles.modalInput, styles.contentInput]}
-                            placeholder="Enter file content"
+                            placeholder="Sisesta faili sisu"
                             value={newFileContent}
                             onChangeText={setNewFileContent}
                             multiline
@@ -209,13 +266,45 @@ export default function FilesScreen() {
                                     setNewFileContent('');
                                 }}
                             >
-                                <Text style={styles.buttonText}>Cancel</Text>
+                                <Text style={styles.buttonText}>Tühista</Text>
                             </TouchableOpacity>
                             <TouchableOpacity 
                                 style={[styles.modalButton, styles.createButton]}
                                 onPress={createNewFile}
                             >
-                                <Text style={styles.buttonText}>Create</Text>
+                                <Text style={styles.buttonText}>Loo</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+            
+            <Modal
+                visible={isDeleteModalVisible}
+                transparent={true}
+                animationType="slide"
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Kustuta fail</Text>
+                        <Text style={styles.deleteText}>
+                            Kas olete kindel, et soovite kustutada faili "{selectedFile?.title}"?
+                        </Text>
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => {
+                                    setIsDeleteModalVisible(false);
+                                    setSelectedFile(null);
+                                }}
+                            >
+                                <Text style={styles.buttonText}>Tühista</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.deleteButton]}
+                                onPress={deleteFile}
+                            >
+                                <Text style={styles.buttonText}>Kustuta</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -249,6 +338,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         color: 'white',
         textAlign: 'center',
+        flex: 1,
     },
     searchContainer: {
         flexDirection: 'row',
@@ -308,9 +398,6 @@ const styles = StyleSheet.create({
     createFirstButtonText: {
         color: 'white',
         fontWeight: 'bold',
-    },
-    addButton: {
-        padding: 4,
     },
     modalContainer: {
         flex: 1,
@@ -387,5 +474,30 @@ const styles = StyleSheet.create({
     retryButtonText: {
         color: 'white',
         fontWeight: 'bold',
+    },
+    deleteText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    deleteButton: {
+        backgroundColor: '#ff6b6b',
+    },
+    floatingAddButton: {
+        position: 'absolute',
+        bottom: 20,
+        right: 20,
+        backgroundColor: '#005A2C',
+        borderRadius: 50,
+        width: 60,
+        height: 60,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
     },
 });

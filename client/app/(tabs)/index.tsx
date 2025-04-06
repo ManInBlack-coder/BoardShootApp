@@ -38,7 +38,7 @@ export default function App() {
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Folders" component={FoldersScreen} />
       <Stack.Screen name="Files" component={FilesScreen} />
-      <Stack.Screen name="DocumentView" component={DocumentView} />
+      <Stack.Screen name="Document" component={DocumentView} />
       <Stack.Screen name="MainScreen" component={MainScreen} />
       
    </Stack.Navigator>

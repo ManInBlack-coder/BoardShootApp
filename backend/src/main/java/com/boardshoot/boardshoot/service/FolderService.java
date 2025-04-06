@@ -100,6 +100,34 @@ public class FolderService {
     }
     
     /**
+     * Kustutab kausta ja kõik sellega seotud märkmed.
+     * @param folderId Kausta ID, mida soovitakse kustutada
+     * @return true, kui kustutamine õnnestus
+     */
+    public boolean deleteFolder(Long folderId) {
+        try {
+            Long userId = getCurrentUserId();
+            logger.info("Deleting folder {} for user {}", folderId, userId);
+            
+            // Kontrollime, kas kaust on olemas ja kuulub kasutajale
+            Optional<Folder> folderOpt = folderRepository.findByUserIdAndId(userId, folderId);
+            if (!folderOpt.isPresent()) {
+                logger.error("Folder not found or does not belong to user: folderId={}, userId={}", folderId, userId);
+                throw new RuntimeException("Folder not found or does not belong to you");
+            }
+            
+            // Kustutame kausta (koos märkmetega tänu CascadeType.ALL ja orphanRemoval=true)
+            folderRepository.delete(folderOpt.get());
+            logger.info("Successfully deleted folder {} with all its notes", folderId);
+            
+            return true;
+        } catch (Exception e) {
+            logger.error("Error in deleteFolder for folderId: {}", folderId, e);
+            throw e;
+        }
+    }
+    
+    /**
      * Meetod praeguse autenditud kasutaja ID saamiseks.
      * Kui kasutaja on autenditud, tagastab kasutaja ID.
      * Kui autentimine puudub, tagastab testimiseks TEST_USER_ID.
