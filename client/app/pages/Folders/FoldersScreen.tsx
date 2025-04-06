@@ -167,7 +167,7 @@ export default function FoldersScreen() {
           <TouchableOpacity onPress={toggleSearch} style={styles.searchIcon}>
             <Ionicons name="search" size={28} color="white" />
           </TouchableOpacity>
-          <Text style={styles.title}>Kaustade</Text>
+          <Text style={styles.title}>Folders</Text>
           <View style={styles.emptyIcon}></View>
         </View>
         
