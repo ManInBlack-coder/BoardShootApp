@@ -287,7 +287,8 @@ const DocumentView = () => {
     return (
       <ScaleDecorator>
         <TouchableOpacity
-          activeOpacity={0.8}
+          activeOpacity={0.9}
+          delayLongPress={300}
           onLongPress={() => {
             drag();
             // Väristame telefoni, et anda kasutajale tagasisidet
@@ -305,15 +306,20 @@ const DocumentView = () => {
           ]}
           disabled={isActive}
         >
+          <View style={styles.dragHandleContainer}>
+            <Ionicons name="menu" size={24} color="#666" />
+            <Text style={styles.imageIndex}>{index + 1}</Text>
+          </View>
           <Image source={{ uri: item }} style={styles.image} resizeMode="cover" />
           {isActive && (
             <View style={styles.dragIndicator}>
-              <Ionicons name="move" size={24} color="white" />
+              <Ionicons name="move" size={30} color="white" />
             </View>
           )}
           <TouchableOpacity
             style={styles.deleteImageButton}
             onPress={() => handleImageDelete(index, item)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="close-circle" size={24} color="#ff6b6b" />
           </TouchableOpacity>
@@ -367,6 +373,10 @@ const DocumentView = () => {
               style={styles.scrollView} 
               keyboardShouldPersistTaps="handled"
               ref={scrollViewRef}
+              showsVerticalScrollIndicator={true}
+              scrollEventThrottle={16}
+              decelerationRate="normal"
+              contentContainerStyle={styles.scrollViewContent}
             >
               <TextInput
                 style={styles.editor}
@@ -381,7 +391,7 @@ const DocumentView = () => {
               
               {/* Piltide sektsioon on nüüd ScrollView sees */}
               {images.length > 0 && (
-                <View style={styles.imagesSection}>
+                <View style={styles.imagesSection} pointerEvents="box-none">
                   <View style={styles.imagesSectionHeader}>
                     <Text style={styles.imagesTitle}>Pildid</Text>
                     <Text style={styles.imagesHint}>
@@ -396,15 +406,26 @@ const DocumentView = () => {
                       keyExtractor={(item, index) => `image-${index}`}
                       onDragEnd={({ data }) => handleImagesReorder(data)}
                       horizontal={false}
-                      numColumns={2}
+                      numColumns={1}
                       containerStyle={styles.imagesContainer}
-                      scrollEnabled={false} // Keelame eraldi kerimise, kuna see toimub juba ScrollView-s
-                      activationDistance={10} // Väiksem kaugus on parem mobiilil
-                      dragHitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // Lihtsustab lohistamise alustamist
-                      dragItemOverflow={true} // Lubab pildil laieneda üle oma tavapärase ala lohistamisel
+                      scrollEnabled={false}
+                      activationDistance={20}
+                      dragHitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                      dragItemOverflow={true}
                     />
                   </GestureHandlerRootView>
                 </View>
+              )}
+              
+              {/* Navigeerimise nupp, mis võimaldab kiiresti üles kerida */}
+              {images.length > 2 && (
+                <TouchableOpacity 
+                  style={styles.scrollToTopButton}
+                  onPress={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}
+                >
+                  <Ionicons name="chevron-up" size={24} color="white" />
+                  <Text style={styles.scrollToTopText}>Keri üles</Text>
+                </TouchableOpacity>
               )}
               
               {/* Lisame alumise ruumi, et oleks kerge alla kerida */}
@@ -560,12 +581,15 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  scrollViewContent: {
+    paddingBottom: 50,
+  },
   editor: {
     minHeight: 200,
     fontSize: 16,
     lineHeight: 24,
     fontFamily: 'System',
-    paddingBottom: 20,
+    paddingBottom: 30,
   },
   loadingContainer: {
     flex: 1,
@@ -669,14 +693,25 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   imagesSection: {
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 30,
+    marginBottom: 30,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 15,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   imagesSectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingBottom: 10,
   },
   imagesTitle: {
     fontSize: 18,
@@ -692,25 +727,31 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   imageWrapper: {
-    width: '48%',
-    aspectRatio: 1,
-    marginBottom: 10,
+    width: '98%',
+    aspectRatio: 16/9,
+    marginBottom: 20,
     marginHorizontal: '1%',
-    borderRadius: 8,
+    borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#ddd',
     position: 'relative',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   activeImageWrapper: {
     borderColor: '#005A2C',
     borderWidth: 3,
-    opacity: 0.9,
-    elevation: 8,
+    opacity: 1,
+    elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
     transform: [{ scale: 1.05 }],
     zIndex: 999,
   },
@@ -718,15 +759,32 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    marginLeft: -12,
-    marginTop: -12,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
+    marginLeft: -20,
+    marginTop: -20,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
+  },
+  dragHandleContainer: {
+    position: 'absolute',
+    top: 5,
+    left: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    zIndex: 10,
+  },
+  imageIndex: {
+    marginLeft: 5,
+    fontWeight: 'bold',
+    color: '#666',
   },
   image: {
     width: '100%',
@@ -742,6 +800,7 @@ const styles = StyleSheet.create({
     height: 30,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10,
   },
   imageViewerFooter: {
     height: 60,
@@ -768,8 +827,28 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   gestureRoot: {
-    minHeight: 100,
-  }
+    minHeight: 200,
+  },
+  scrollToTopButton: {
+    alignSelf: 'center',
+    backgroundColor: '#005A2C',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    marginVertical: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  scrollToTopText: {
+    color: 'white',
+    marginLeft: 5,
+    fontWeight: 'bold',
+  },
 });
 
 export default DocumentView;
