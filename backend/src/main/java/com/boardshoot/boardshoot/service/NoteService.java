@@ -280,4 +280,135 @@ public class NoteService {
             throw e;
         }
     }
+    
+    /**
+     * Abimeetod, mis lühendab pikki URL-ide logimiseks
+     */
+    private String truncateUrl(String url) {
+        if (url == null || url.length() <= 50) {
+            return url;
+        }
+        
+        if (url.startsWith("data:image")) {
+            String prefix = "data:image/";
+            int endOfMimeType = url.indexOf(";base64,");
+            if (endOfMimeType > 0) {
+                String mimeType = url.substring(prefix.length(), endOfMimeType);
+                return String.format("data:image/%s;base64,...[%d chars]", mimeType, url.length() - endOfMimeType - 8);
+            }
+        }
+        
+        return String.format("%s...%s [%d chars]", 
+                url.substring(0, 20), 
+                url.substring(url.length() - 20), 
+                url.length());
+    }
+    
+    /**
+     * Kustutab pildi märkmest URL-i põhjal
+     * @param noteId Märkme ID
+     * @param imageUrl Pildi URL, mida soovitakse kustutada
+     * @return true, kui kustutamine õnnestus
+     */
+    public boolean deleteImageFromNote(Long noteId, String imageUrl) {
+        try {
+            logger.info("Deleting image from note {}", noteId);
+            logger.debug("Image URL to delete: {}", truncateUrl(imageUrl));
+            
+            // Leiame märkme
+            Optional<Note> noteOpt = noteRepository.findById(noteId);
+            if (!noteOpt.isPresent()) {
+                logger.error("Note not found: {}", noteId);
+                throw new RuntimeException("Note not found");
+            }
+            
+            Note note = noteOpt.get();
+            
+            // Kontrollime, kas pilt on märkme piltide nimekirjas
+            List<String> imageUrls = note.getImageUrls();
+            if (imageUrls == null || !imageUrls.contains(imageUrl)) {
+                logger.error("Image URL not found in note: {}", noteId);
+                return false;
+            }
+            
+            // Kui tegemist on base64 pildiga, siis lihtsalt eemaldame selle märkme piltide nimekirjast
+            // Kui tegemist on Supabase Storage pildiga, siis kustutame selle ka Supabase'ist
+            if (imageUrl.startsWith("http") && storageService != null) {
+                try {
+                    // Võtame pildi nime URL-ist
+                    String imageName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+                    // Kustutame pildi Supabase'ist
+                    storageService.deleteImage(imageName);
+                    logger.info("Deleted image from storage: {}", imageName);
+                } catch (Exception e) {
+                    logger.error("Failed to delete image from storage: {}", e.getMessage(), e);
+                    // Jätkame siiski, et eemaldada pilt märkmest
+                }
+            }
+            
+            // Eemaldame pildi märkme piltide nimekirjast
+            imageUrls.remove(imageUrl);
+            
+            // Salvestame muudetud märkme
+            note = noteRepository.save(note);
+            logger.info("Image successfully deleted from note {}", noteId);
+            
+            return true;
+        } catch (Exception e) {
+            logger.error("Error deleting image from note: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+    
+    /**
+     * Muudab piltide järjekorda märkmes
+     * @param noteId Märkme ID
+     * @param newImageOrder Uus piltide järjekord (URL-ide nimekiri)
+     * @return Uuendatud märge
+     */
+    public Note reorderImages(Long noteId, List<String> newImageOrder) {
+        try {
+            logger.info("Reordering {} images for note {}", 
+                    newImageOrder != null ? newImageOrder.size() : 0, 
+                    noteId);
+            
+            // Leiame märkme
+            Optional<Note> noteOpt = noteRepository.findById(noteId);
+            if (!noteOpt.isPresent()) {
+                logger.error("Note not found: {}", noteId);
+                throw new RuntimeException("Note not found");
+            }
+            
+            Note note = noteOpt.get();
+            
+            // Kontrollime, et uues järjekorras oleks kõik märkme pildid
+            List<String> currentImageUrls = note.getImageUrls();
+            if (currentImageUrls == null || currentImageUrls.size() != newImageOrder.size()) {
+                logger.error("New image order does not match current images count. Current: {}, New: {}", 
+                        currentImageUrls != null ? currentImageUrls.size() : 0, 
+                        newImageOrder.size());
+                throw new RuntimeException("Invalid image order list");
+            }
+            
+            // Kontrollime, et kõik pildid oleksid olemas
+            for (String imageUrl : currentImageUrls) {
+                if (!newImageOrder.contains(imageUrl)) {
+                    logger.error("Image URL not found in new order: {}", truncateUrl(imageUrl));
+                    throw new RuntimeException("Invalid image order: missing images");
+                }
+            }
+            
+            // Seame uue järjekorra
+            note.setImageUrls(newImageOrder);
+            
+            // Salvestame muudetud märkme
+            note = noteRepository.save(note);
+            logger.info("Images successfully reordered for note {}", noteId);
+            
+            return note;
+        } catch (Exception e) {
+            logger.error("Error reordering images: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
 } 

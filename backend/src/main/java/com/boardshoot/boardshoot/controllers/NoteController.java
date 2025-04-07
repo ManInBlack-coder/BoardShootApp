@@ -128,6 +128,69 @@ public class NoteController {
         }
     }
     
+    /**
+     * Kustutab pildi märkmest
+     */
+    @DeleteMapping("/{noteId}/images")
+    public ResponseEntity<?> deleteImageFromNote(@PathVariable Long folderId, 
+                                               @PathVariable Long noteId,
+                                               @RequestBody DeleteImageRequest request) {
+        try {
+            logger.info("Deleting image from note: {} in folder: {}", noteId, folderId);
+            
+            if (request.getImageUrl() == null || request.getImageUrl().isEmpty()) {
+                logger.warn("Image URL is empty for note: {} in folder: {}", noteId, folderId);
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Image URL is required"));
+            }
+            
+            // Kustutame pildi
+            boolean success = noteService.deleteImageFromNote(noteId, request.getImageUrl());
+            
+            if (success) {
+                logger.info("Successfully deleted image from note: {}", noteId);
+                return ResponseEntity.ok(Map.of("success", true, "message", "Image deleted successfully"));
+            } else {
+                logger.warn("Failed to delete image from note: {}", noteId);
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to delete image"));
+            }
+        } catch (Exception e) {
+            logger.error("Error deleting image from note: {} in folder: {}: {}", noteId, folderId, e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false, 
+                "message", "Server error: " + e.getMessage())
+            );
+        }
+    }
+    
+    /**
+     * Muudab piltide järjekorda märkmes
+     */
+    @PutMapping("/{noteId}/images/reorder")
+    public ResponseEntity<?> reorderImages(@PathVariable Long folderId, 
+                                         @PathVariable Long noteId,
+                                         @RequestBody ReorderImagesRequest request) {
+        try {
+            logger.info("Reordering images for note: {} in folder: {}", noteId, folderId);
+            
+            if (request.getImageUrls() == null || request.getImageUrls().isEmpty()) {
+                logger.warn("Image URLs list is empty for note: {} in folder: {}", noteId, folderId);
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Image URLs list is required"));
+            }
+            
+            // Muudame piltide järjekorda
+            Note updatedNote = noteService.reorderImages(noteId, request.getImageUrls());
+            
+            logger.info("Successfully reordered images for note: {}", noteId);
+            return ResponseEntity.ok(updatedNote);
+        } catch (Exception e) {
+            logger.error("Error reordering images for note: {} in folder: {}: {}", noteId, folderId, e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false, 
+                "message", "Server error: " + e.getMessage())
+            );
+        }
+    }
+    
     public static class CreateNoteRequest {
         private String title;
         private String text;
@@ -179,6 +242,30 @@ public class NoteController {
         
         public void setImage(String image) {
             this.image = image;
+        }
+    }
+    
+    public static class DeleteImageRequest {
+        private String imageUrl;
+        
+        public String getImageUrl() {
+            return imageUrl;
+        }
+        
+        public void setImageUrl(String imageUrl) {
+            this.imageUrl = imageUrl;
+        }
+    }
+    
+    public static class ReorderImagesRequest {
+        private List<String> imageUrls;
+        
+        public List<String> getImageUrls() {
+            return imageUrls;
+        }
+        
+        public void setImageUrls(List<String> imageUrls) {
+            this.imageUrls = imageUrls;
         }
     }
 } 
