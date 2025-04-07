@@ -126,6 +126,11 @@ public class AuthController {
         }
     }
     
+    @GetMapping("/health")
+    public ResponseEntity<?> healthCheck() {
+        return ResponseEntity.ok("Server is running");
+    }
+    
     private Map<String, Object> mapUserToResponse(User user) {
         Map<String, Object> userResponse = new HashMap<>();
         userResponse.put("id", user.getId());

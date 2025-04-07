@@ -36,7 +36,30 @@ console.log("API URL seadistatud:", API_URL);
 // Võrguühenduse kontrollimise alternatiivne lahendus
 const checkNetworkConnection = async (): Promise<boolean> => {
   try {
-    // Proovime teha lihtsa fetch päringu, et kontrollida võrguühendust
+    // Proovime kõigepealt ühenduda API serveriga
+    try {
+      console.log("Kontrollin ühendust API serveriga:", API_URL);
+      const serverTimeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('API Server Timeout')), 5000);
+      });
+      
+      const serverFetchPromise = fetch(`${API_URL}/health`, { 
+        method: 'HEAD',
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      await Promise.race([serverFetchPromise, serverTimeoutPromise]);
+      console.log('API server on kättesaadav');
+      return true;
+    } catch (serverError) {
+      console.error('API server pole kättesaadav:', serverError);
+      // Kui API server pole kättesaadav, proovime veel internetiühendust üldiselt kontrollida
+    }
+
+    // Proovime teha lihtsa fetch päringu, et kontrollida üldist võrguühendust
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Timeout')), 5000);
     });
@@ -47,10 +70,12 @@ const checkNetworkConnection = async (): Promise<boolean> => {
     });
     
     await Promise.race([fetchPromise, timeoutPromise]);
-    console.log('Network is available');
-    return true;
+    console.log('Üldine võrguühendus on olemas, kuid API server pole kättesaadav');
+    
+    // Kuigi internet töötab, API server pole kättesaadav, seega tagastame false
+    return false;
   } catch (error) {
-    console.error('Network check failed:', error);
+    console.error('Võrguühenduse kontroll ebaõnnestus:', error);
     return false;
   }
 };
