@@ -8,8 +8,13 @@ export type RootStackParamList = {
     CameraScreen: undefined;
     MainScreen: undefined;
     Files: {
+        folderId: number;
         folderName: string;
-        files: Array<{name: string, size: string, type: string}>;
+    };
+    Document: {
+        folderId: number;
+        noteId: number;
+        title: string;
     };
     DocumentView: undefined;
 };

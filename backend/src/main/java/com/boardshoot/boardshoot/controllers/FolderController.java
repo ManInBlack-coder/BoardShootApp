@@ -1,4 +1,4 @@
-package com.boardshoot.boardshoot.controller;
+package com.boardshoot.boardshoot.controllers;
 
 import com.boardshoot.boardshoot.model.Folder;
 import com.boardshoot.boardshoot.repository.UserRepository;
@@ -83,6 +83,19 @@ public class FolderController {
         } catch (Exception e) {
             logger.error("Error retrieving folders for user ID: {}", userId, e);
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    @DeleteMapping("/folders/{folderId}")
+    public ResponseEntity<?> deleteFolder(@PathVariable Long folderId) {
+        try {
+            logger.info("Deleting folder with ID: {}", folderId);
+            boolean result = folderService.deleteFolder(folderId);
+            logger.info("Folder deletion result: {}", result);
+            return new ResponseEntity<>(Map.of("success", true, "message", "Folder deleted successfully"), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error deleting folder with ID: {}", folderId, e);
+            return new ResponseEntity<>(Map.of("success", false, "message", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 } 

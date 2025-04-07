@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 @Service
 public class NoteService {
@@ -30,6 +31,9 @@ public class NoteService {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private StorageService storageService;
     
     // Testimisloogika - kasutame fikseeritud kasutaja ID-d
     private static final Long TEST_USER_ID = 1L;
@@ -114,6 +118,90 @@ public class NoteService {
     }
     
     /**
+     * Uuendab olemasoleva märkme sisu.
+     * @param noteId Märkme ID, mida uuendatakse
+     * @param title Uus pealkiri (võib olla null, kui ei muudeta)
+     * @param text Uus tekstisisu (võib olla null, kui ei muudeta)
+     * @return Uuendatud märge
+     */
+    public Note updateNote(Long noteId, String title, String text) {
+        try {
+            logger.info("Updating note with ID {}", noteId);
+            
+            // Kontrolli, kas kasutajal on õigus märkust muuta
+            Long userId = getCurrentUserId();
+            
+            Optional<Note> noteOpt = noteRepository.findById(noteId);
+            if (!noteOpt.isPresent()) {
+                logger.error("Note not found: {}", noteId);
+                throw new RuntimeException("Note not found");
+            }
+            
+            Note note = noteOpt.get();
+            
+            // Kontrollime, kas märkus kuulub kasutajale (praegusel juhul ei rakenda, aga turvalisuse jaoks võiks)
+            // if (!note.getUser().getId().equals(userId)) {
+            //     logger.error("User {} not authorized to update note {}", userId, noteId);
+            //     throw new RuntimeException("Not authorized to update this note");
+            // }
+            
+            // Uuendame pealkirja, kui see on määratud
+            if (title != null && !title.isEmpty()) {
+                note.setTitle(title);
+            }
+            
+            // Asendame olemasoleva teksti, kui uus tekst on olemas
+            if (text != null) {
+                // Kuna Note klassis on tekstid loeteluna, siis asendame kõik varasemad tekstid ühe uuega
+                note.setTexts(new ArrayList<>());
+                note.addText(text);
+            }
+            
+            note = noteRepository.save(note);
+            logger.info("Updated note with ID: {}", note.getId());
+            
+            return note;
+        } catch (Exception e) {
+            logger.error("Error in updateNote", e);
+            throw e;
+        }
+    }
+    
+    /**
+     * Kustutab märkme antud ID põhjal.
+     * @param noteId Märkme ID, mida soovitakse kustutada
+     * @return true, kui kustutamine õnnestus
+     */
+    public boolean deleteNote(Long noteId) {
+        try {
+            Long userId = getCurrentUserId();
+            logger.info("Deleting note with ID {} for user {}", noteId, userId);
+            
+            Optional<Note> noteOpt = noteRepository.findById(noteId);
+            if (!noteOpt.isPresent()) {
+                logger.error("Note not found: {}", noteId);
+                throw new RuntimeException("Note not found");
+            }
+            
+            Note note = noteOpt.get();
+            
+            // Võib lisada kontrolli, kas märkus kuulub kasutajale
+            // if (!note.getUser().getId().equals(userId)) {
+            //     logger.error("User {} not authorized to delete note {}", userId, noteId);
+            //     throw new RuntimeException("Not authorized to delete this note");
+            // }
+            
+            noteRepository.delete(note);
+            logger.info("Successfully deleted note with ID: {}", noteId);
+            
+            return true;
+        } catch (Exception e) {
+            logger.error("Error in deleteNote for noteId: {}", noteId, e);
+            throw e;
+        }
+    }
+    
+    /**
      * Meetod praeguse autenditud kasutaja ID saamiseks.
      * Kui kasutaja on autenditud, tagastab kasutaja ID.
      * Kui autentimine puudub, tagastab testimiseks TEST_USER_ID.
@@ -156,5 +244,40 @@ public class NoteService {
         // Kui autentimine puudub, kasutame testimiseks TEST_USER_ID
         logger.warn("No authenticated user found, using test user ID: {}", TEST_USER_ID);
         return TEST_USER_ID;
+    }
+    
+    /**
+     * Lisab olemasolevale märkmele pildi.
+     * @param noteId Märkme ID, millele pilt lisatakse
+     * @param imageData Pildi andmed baitmaatriksina
+     * @return Uuendatud märge
+     */
+    public Note addImageToNote(Long noteId, byte[] imageData) {
+        try {
+            logger.info("Adding image to note with ID {}", noteId);
+            
+            Optional<Note> noteOpt = noteRepository.findById(noteId);
+            if (!noteOpt.isPresent()) {
+                logger.error("Note not found: {}", noteId);
+                throw new RuntimeException("Note not found");
+            }
+            
+            Note note = noteOpt.get();
+            
+            // Laadime pildi Supabase Storage'isse ja saame tagasi URL-i
+            String imageUrl = storageService.uploadImage(imageData, noteId);
+            logger.info("Image uploaded to storage, URL: {}", imageUrl);
+            
+            // Lisame pildi URL-i märkmele
+            note.addImageUrl(imageUrl);
+            
+            note = noteRepository.save(note);
+            logger.info("Added image to note with ID: {}", note.getId());
+            
+            return note;
+        } catch (Exception e) {
+            logger.error("Error in addImageToNote", e);
+            throw e;
+        }
     }
 } 
