@@ -23,12 +23,33 @@ public class StorageService {
     private SupabaseStorageConfig supabaseConfig;
 
     /**
+     * Abimeetod, mis lühendab pikki URL-ide ja andmete logimiseks
+     */
+    private String truncateData(String data, String prefix) {
+        if (data == null) {
+            return "null";
+        }
+        
+        if (data.length() <= 50) {
+            return data;
+        }
+        
+        return String.format("%s...%s [%d bytes]", 
+                prefix != null ? prefix : data.substring(0, 20), 
+                data.substring(data.length() - 5), 
+                data.length());
+    }
+
+    /**
      * Salvestab pildi data URL formaadis, et vältida Supabase API-ga seotud probleeme
      */
     public String uploadImage(byte[] imageData, Long noteId) {
         try {
             // Esmalt proovime pildi otse Supabase Storage'isse üles laadida
             String fileName = "note_" + noteId + "_" + UUID.randomUUID().toString() + ".jpg";
+            logger.info("Attempting to upload image for note {} with filename: {}", noteId, fileName);
+            logger.debug("Image data size: {} bytes", imageData != null ? imageData.length : 0);
+            
             String uploadUrl = uploadToSupabaseStorage(imageData, fileName);
             
             if (uploadUrl != null) {
@@ -41,6 +62,7 @@ public class StorageService {
             
             // Teisendame binaar-pildi base64 kujule
             String base64Image = Base64.getEncoder().encodeToString(imageData);
+            logger.debug("Base64 encoded data size: {} bytes", base64Image.length());
             
             // Tagastame data URL, mida saab otse HTML img tag-is kasutada
             String dataUrl = "data:image/jpeg;base64," + base64Image;
@@ -205,6 +227,49 @@ public class StorageService {
             }
         } catch (Exception e) {
             logger.error("Error creating bucket: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Kustutab pildi Supabase Storage'ist
+     * @param fileName Faili nimi, mida soovitakse kustutada
+     * @return true, kui kustutamine õnnestus
+     */
+    public boolean deleteImage(String fileName) {
+        try {
+            logger.info("Deleting image from Supabase Storage: {}", fileName);
+            
+            // Supabase S3 ühilduv endpoint
+            String deleteUrl = String.format("%s/storage/v1/object/%s/%s", 
+                supabaseConfig.getSupabaseUrl(),
+                supabaseConfig.getBucketName(),
+                fileName);
+            
+            logger.debug("Delete URL: {}", deleteUrl);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("apikey", truncateData(supabaseConfig.getSupabaseServiceKey(), "apikey-"));
+            headers.set("Authorization", "Bearer " + truncateData(supabaseConfig.getSupabaseServiceKey(), "token-"));
+            
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+            
+            ResponseEntity<String> response = restTemplate.exchange(
+                deleteUrl,
+                HttpMethod.DELETE,
+                requestEntity,
+                String.class
+            );
+            
+            if (response.getStatusCode().is2xxSuccessful()) {
+                logger.info("Successfully deleted image from Supabase Storage: {}", fileName);
+                return true;
+            } else {
+                logger.error("Failed to delete image from Supabase Storage: {}", response.getBody());
+                return false;
+            }
+        } catch (Exception e) {
+            logger.error("Error deleting image from Supabase Storage: {}", e.getMessage(), e);
+            return false;
         }
     }
 } 
