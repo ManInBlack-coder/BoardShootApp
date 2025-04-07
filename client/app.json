@@ -32,6 +32,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "serverIp": "172.20.10.10",
+      "apiUrl": "http://172.20.10.10:8080/api"
     }
   }
 }

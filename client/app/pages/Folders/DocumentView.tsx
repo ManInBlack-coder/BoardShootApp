@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Modal, Image } from 'react-native';
 import { useState, useEffect, useCallback } from 'react';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -150,6 +150,25 @@ const DocumentView = () => {
             autoCapitalize="sentences"
             autoCorrect
           />
+          
+          {/* Piltide sektsiooni algus */}
+          {document && document.imageUrls && document.imageUrls.length > 0 && (
+            <View style={styles.imagesSection}>
+              <Text style={styles.imagesTitle}>Pildid</Text>
+              <View style={styles.imagesContainer}>
+                {document.imageUrls.map((imageUrl, index) => (
+                  <View key={index} style={styles.imageWrapper}>
+                    <Image
+                      source={{ uri: imageUrl }}
+                      style={styles.image}
+                      resizeMode="cover"
+                    />
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+          {/* Piltide sektsiooni lõpp */}
         </ScrollView>
       )}
       
@@ -307,6 +326,34 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  imagesSection: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  imagesTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  imagesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+  imageWrapper: {
+    width: '48%',
+    marginBottom: 10,
+    marginRight: '2%',
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  image: {
+    width: '100%',
+    height: 180,
   },
 });
 

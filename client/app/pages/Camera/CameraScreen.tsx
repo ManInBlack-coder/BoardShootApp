@@ -1,24 +1,22 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Modal } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, ActivityIndicator, Alert } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { folderService, noteService } from '../../services/noteService';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface PhotoType {
     uri: string;
 }
 
-// Mock folders data
-const MOCK_FOLDERS = [
-    { id: '1', name: 'Mata' },
-    { id: '2', name: 'Eesti keel' },
-    { id: '3', name: 'Progre' },
-];
+interface Folder {
+    id: number;
+    name: string;
+}
 
-// Mock file types data
-const MOCK_FILE_TYPES = [
-    { id: '1', name: 'Trigo' },
-    { id: '2', name: 'Jadad' },
-    { id: '3', name: 'Eksponent' },
-];
+interface Note {
+    id: number;
+    title: string;
+}
 
 export default function CameraScreen() {
     const [permission, requestPermission] = useCameraPermissions();
@@ -26,9 +24,224 @@ export default function CameraScreen() {
     const [photo, setPhoto] = React.useState<string | null>(null);
     const [showFolders, setShowFolders] = useState(false);
     const [showFileTypes, setShowFileTypes] = useState(false);
-    const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-    const [selectedFileType, setSelectedFileType] = useState<string | null>(null);
+    const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+    const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+    const [folders, setFolders] = useState<Folder[]>([]);
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [loading, setLoading] = useState(false);
     const cameraRef = useRef<CameraView>(null);
+    const [networkAvailable, setNetworkAvailable] = useState<boolean>(true);
+    const [retryCount, setRetryCount] = useState<number>(0);
+    const MAX_RETRIES = 3;
+
+    // Funktsioon kaustade laadimiseks - tuleb deklareerida enne kasutamist
+    const loadFolders = useCallback(async () => {
+        if (!networkAvailable) {
+            console.log('Network unavailable, skipping folder loading');
+            Alert.alert(
+                'Võrguühendus puudub',
+                'Ei saa kaustasid laadida. Palun kontrolli oma internetiühendust.',
+                [{ text: 'OK' }]
+            );
+            return;
+        }
+
+        try {
+            console.log('Loading folders...');
+            setLoading(true);
+            const fetchedFolders = await folderService.getFolders();
+            console.log('Fetched folders:', fetchedFolders.length);
+            setFolders(fetchedFolders);
+            
+            // Lähtestame retryCount, kui õnnestus
+            setRetryCount(0);
+            
+            // Kui kaustu ei leitud, näitame kasutajale hoiatust
+            if (fetchedFolders.length === 0) {
+                Alert.alert(
+                    'Tähelepanu',
+                    'Sul pole ühtegi kausta. Palun loo esmalt kaust.',
+                    [{ text: 'OK' }]
+                );
+            }
+        } catch (error) {
+            console.error('Error loading folders:', error);
+            
+            // Suurendame retry arvu
+            const newRetryCount = retryCount + 1;
+            setRetryCount(newRetryCount);
+            
+            // Kui oleme proovitud maksimaalse arvu kordi, näitame veateadet
+            if (newRetryCount >= MAX_RETRIES) {
+                let errorMessage = 'Kaustade laadimine ebaõnnestus';
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                }
+                
+                Alert.alert(
+                    'Viga',
+                    `${errorMessage}. Palun proovi hiljem uuesti.`,
+                    [
+                        { 
+                            text: 'Proovi uuesti', 
+                            onPress: () => {
+                                setRetryCount(0); // Lähtestame loendurid
+                                loadFolders();
+                            }
+                        }
+                    ]
+                );
+            } else {
+                // Proovime automaatselt uuesti laadida väikese viivitusega
+                setTimeout(() => {
+                    console.log(`Auto-retry ${newRetryCount} of ${MAX_RETRIES}`);
+                    loadFolders();
+                }, 1000 * newRetryCount); // Suurenev viivitus: 1s, 2s, 3s...
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [networkAvailable, retryCount]);
+    
+    // Funktsioon märkmete laadimiseks valitud kaustast
+    const loadNotes = useCallback(async (folderId: number) => {
+        if (!networkAvailable) {
+            console.log('Network unavailable, skipping notes loading');
+            Alert.alert(
+                'Võrguühendus puudub',
+                'Ei saa märkmeid laadida. Palun kontrolli oma internetiühendust.',
+                [{ text: 'OK' }]
+            );
+            return;
+        }
+
+        try {
+            console.log('Loading notes for folder:', folderId);
+            setLoading(true);
+            // Kasutame folderService.getNotesForFolder (mitte noteService)
+            const fetchedNotes = await folderService.getNotesForFolder(folderId);
+            console.log('Fetched notes:', fetchedNotes.length);
+            setNotes(fetchedNotes);
+            
+            // Kui märkmeid ei leitud, näitame kasutajale hoiatust
+            if (fetchedNotes.length === 0) {
+                Alert.alert(
+                    'Tähelepanu',
+                    'Selles kaustas pole märkmeid. Palun loo esmalt märge.',
+                    [{ text: 'OK' }]
+                );
+            }
+        } catch (error) {
+            console.error('Error loading notes:', error);
+            let errorMessage = 'Märkmete laadimine ebaõnnestus';
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            
+            Alert.alert(
+                'Viga',
+                `${errorMessage}. Palun kontrolli võrguühendust.`,
+                [
+                    { 
+                        text: 'Proovi uuesti', 
+                        onPress: () => loadNotes(folderId)
+                    },
+                    {
+                        text: 'Tagasi',
+                        onPress: () => setShowFileTypes(false),
+                        style: 'cancel'
+                    }
+                ]
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [networkAvailable]);
+
+    // Jälgime võrguühenduse seisundit - NetInfo asemel kasutame lihtsamat lahendust
+    useEffect(() => {
+        // Algne võrguühenduse kontroll
+        const checkInitialConnection = async () => {
+            try {
+                // Proovime teha lihtsa fetch päringu, et kontrollida võrguühendust
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Timeout')), 5000);
+                });
+                
+                const fetchPromise = fetch('https://www.google.com', { 
+                    method: 'HEAD',
+                    cache: 'no-cache'
+                });
+                
+                await Promise.race([fetchPromise, timeoutPromise]);
+                console.log('Initial network check: available');
+                setNetworkAvailable(true);
+            } catch (error) {
+                console.error('Initial network check failed:', error);
+                setNetworkAvailable(false);
+            }
+        };
+        
+        checkInitialConnection();
+        
+        // Perioodiline võrguühenduse kontrollimine
+        const networkCheckInterval = setInterval(async () => {
+            try {
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Timeout')), 5000);
+                });
+                
+                const fetchPromise = fetch('https://www.google.com', { 
+                    method: 'HEAD',
+                    cache: 'no-cache'
+                });
+                
+                await Promise.race([fetchPromise, timeoutPromise]);
+                
+                // Kui võrguühendus taastub
+                if (!networkAvailable) {
+                    console.log('Network restored, reloading data...');
+                    setNetworkAvailable(true);
+                    loadFolders();
+                    setRetryCount(0);
+                }
+            } catch (error) {
+                if (networkAvailable) {
+                    console.log('Network connection lost');
+                    setNetworkAvailable(false);
+                }
+            }
+        }, 10000); // Kontrollime iga 10 sekundi järel
+        
+        // Puhastame intervalli, kui komponent eemaldatakse
+        return () => {
+            clearInterval(networkCheckInterval);
+        };
+    }, [networkAvailable, loadFolders, retryCount]);
+
+    // Laadime kaustad kui rakendus käivitub
+    useEffect(() => {
+        loadFolders();
+    }, [loadFolders]);
+
+    // Laadime kaustad uuesti, kui ekraan saab fookuse
+    useFocusEffect(
+        useCallback(() => {
+            console.log('Camera screen focused, loading folders...');
+            loadFolders();
+            return () => {
+                // Puhastustoimingud, kui ekraan kaotab fookuse
+                console.log('Camera screen unfocused');
+            };
+        }, [loadFolders])
+    );
+
+    // Kui pilt on tehtud, laeme kaustad uuesti, et tagada värske info
+    useEffect(() => {
+        if (photo) {
+            loadFolders();
+        }
+    }, [photo, loadFolders]);
 
     useEffect(() => {
         requestPermission();
@@ -37,12 +250,18 @@ export default function CameraScreen() {
     const takePicture = async () => {
         if (cameraRef.current) {
             try {
-                const result = await cameraRef.current.takePictureAsync();
+                // Võtame pildi madalama kvaliteediga, et vähendada faili suurust
+                const result = await cameraRef.current.takePictureAsync({
+                    quality: 0.5, // Vähendame kvaliteeti, et vähendada faili suurust
+                    base64: false, // Me teisendame ise hiljem
+                    skipProcessing: false, // Lubame töödelda pilti
+                });
                 const photoData = result as PhotoType;
                 setPhoto(photoData.uri);
                 console.log('Photo taken:', photoData.uri);
             } catch (error) {
                 console.error('Error taking picture:', error);
+                Alert.alert('Viga', 'Pildi tegemine ebaõnnestus');
             }
         }
     };
@@ -50,39 +269,86 @@ export default function CameraScreen() {
     const handleCancel = () => {
         setPhoto(null);
         setSelectedFolder(null);
-        setSelectedFileType(null);
+        setSelectedNote(null);
         setShowFileTypes(false);
     };
 
     const handleChooseFolder = () => {
+        // Laadime kaustad uuesti, et tagada värske info
+        loadFolders();
         setShowFolders(true);
         setShowFileTypes(false);
     };
 
-    const handleFolderSelect = (folderName: string) => {
-        setSelectedFolder(folderName);
+    const handleFolderSelect = async (folder: Folder) => {
+        setSelectedFolder(folder);
         setShowFolders(false);
-        setShowFileTypes(true);  // Show file types after selecting a folder
+        // Laadime valitud kaustast märkmed
+        await loadNotes(folder.id);
+        setShowFileTypes(true);
     };
 
-    const handleFileTypeSelect = (fileType: string) => {
-        setSelectedFileType(fileType);
+    const handleNoteSelect = (note: Note) => {
+        setSelectedNote(note);
         setShowFileTypes(false);
     };
 
     const handleBackToFolders = () => {
         setShowFileTypes(false);
         setShowFolders(true);
-        setSelectedFileType(null);
+        setSelectedNote(null);
     };
 
-    const handleSend = () => {
-        if (selectedFolder && photo && selectedFileType) {
-            console.log('Sending photo:', photo, 'to folder:', selectedFolder, 'as file type:', selectedFileType);
-            // TODO: Implement actual send functionality
-            setPhoto(null);
-            setSelectedFolder(null);
-            setSelectedFileType(null);
+    const handleSend = async () => {
+        if (!networkAvailable) {
+            Alert.alert(
+                'Võrguühendus puudub',
+                'Ei saa pilti üles laadida. Palun kontrolli oma internetiühendust.',
+                [{ text: 'OK' }]
+            );
+            return;
+        }
+
+        if (selectedFolder && photo && selectedNote) {
+            try {
+                setLoading(true);
+                console.log('Sending photo to server:', photo, 'to folder:', selectedFolder.name, 'as note:', selectedNote.title);
+                
+                // Saadame pildi API kaudu serverisse
+                await noteService.addImageToNote(selectedFolder.id, selectedNote.id, photo);
+                
+                // Kui õnnestub, siis puhastame oleku
+                setPhoto(null);
+                setSelectedFolder(null);
+                setSelectedNote(null);
+                
+                Alert.alert('Õnnestus', 'Pilt edukalt lisatud märkmesse');
+            } catch (error) {
+                console.error('Error sending photo:', error);
+                
+                // Näitame kasutajale täpsemat veateadet
+                let errorMessage = 'Pildi lisamine ebaõnnestus';
+                if (error instanceof Error) {
+                    errorMessage = `Viga: ${error.message}`;
+                }
+                
+                Alert.alert('Viga', errorMessage, [
+                    { 
+                        text: 'Proovi uuesti', 
+                        onPress: () => {
+                            // Kui kasutaja soovib uuesti proovida, laadime kaustad uuesti
+                            loadFolders();
+                        }
+                    },
+                    {
+                        text: 'Tühista',
+                        onPress: handleCancel,
+                        style: 'cancel'
+                    }
+                ]);
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
@@ -93,6 +359,16 @@ export default function CameraScreen() {
         return <Text>Ei ole kaamera õigusi</Text>;
     }
 
+    // Kui laeb, siis näitame laadimisanimatsiooni
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#00BB8E" />
+                <Text style={styles.loadingText}>Palun oodake...</Text>
+            </View>
+        );
+    }
+
     if (photo) {
         return (
             <View style={styles.container}>
@@ -100,41 +376,77 @@ export default function CameraScreen() {
                 <View style={styles.previewActions}>
                     {showFolders ? (
                         <View style={styles.folderList}>
-                            {MOCK_FOLDERS.map((folder) => (
-                                <TouchableOpacity
-                                    key={folder.id}
-                                    style={styles.folderOption}
-                                    onPress={() => handleFolderSelect(folder.name)}
-                                >
-                                    <Text style={styles.buttonText}>{folder.name}</Text>
-                                </TouchableOpacity>
-                            ))}
+                            {folders.length === 0 ? (
+                                <View>
+                                    <Text style={styles.emptyText}>Kaustu pole veel loodud</Text>
+                                    <TouchableOpacity
+                                        style={styles.backToPhotoButton}
+                                        onPress={handleCancel}
+                                    >
+                                        <Text style={styles.buttonText}>Tagasi</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.retryButton}
+                                        onPress={loadFolders}
+                                    >
+                                        <Text style={styles.buttonText}>Proovi uuesti</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                folders.map((folder) => (
+                                    <TouchableOpacity
+                                        key={folder.id}
+                                        style={styles.folderOption}
+                                        onPress={() => handleFolderSelect(folder)}
+                                    >
+                                        <Text style={styles.buttonText}>{folder.name}</Text>
+                                    </TouchableOpacity>
+                                ))
+                            )}
                         </View>
                     ) : showFileTypes ? (
                         <View style={styles.fileTypeContainer}>
-                            <Text style={styles.FileChooseText}>Choose File</Text>
-                            {MOCK_FILE_TYPES.map((fileType) => (
-                                <TouchableOpacity
-                                    key={fileType.id}
-                                    style={styles.fileTypeOption}
-                                    onPress={() => handleFileTypeSelect(fileType.name)}
-                                >
-                                    <Text style={styles.buttonText}>{fileType.name}</Text>
-                                </TouchableOpacity>
-                            ))}
+                            <Text style={styles.FileChooseText}>Vali märge</Text>
+                            {notes.length === 0 ? (
+                                <View>
+                                    <Text style={styles.emptyText}>Sellel kaustal pole veel märkmeid</Text>
+                                    <TouchableOpacity 
+                                        style={styles.backButton}
+                                        onPress={handleBackToFolders}
+                                    >
+                                        <Text style={styles.buttonText}>Tagasi kaustade juurde</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity 
+                                        style={styles.cancelButton}
+                                        onPress={handleCancel}
+                                    >
+                                        <Text style={styles.buttonText}>Tühista</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                notes.map((note) => (
+                                    <TouchableOpacity
+                                        key={note.id}
+                                        style={styles.fileTypeOption}
+                                        onPress={() => handleNoteSelect(note)}
+                                    >
+                                        <Text style={styles.buttonText}>{note.title}</Text>
+                                    </TouchableOpacity>
+                                ))
+                            )}
                             <View style={styles.bottomButtons}>
                                 <TouchableOpacity 
                                     style={styles.backButton}
                                     onPress={handleBackToFolders}
                                 >
-                                    <Text style={styles.buttonText}>back</Text>
+                                    <Text style={styles.buttonText}>Tagasi</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity 
                                     style={styles.sendButton}
                                     onPress={handleSend}
                                     disabled={true}
                                 >
-                                    <Text style={styles.buttonText}>Send</Text>
+                                    <Text style={styles.buttonText}>Saada</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -145,7 +457,7 @@ export default function CameraScreen() {
                                 onPress={handleChooseFolder}
                             >
                                 <Text style={styles.buttonText}>
-                                    {selectedFolder ? `${selectedFolder} - ${selectedFileType || 'Choose File Type'}` : 'Choose Folder'}
+                                    {selectedFolder ? `${selectedFolder.name} - ${selectedNote ? selectedNote.title : 'Vali märge'}` : 'Vali kaust'}
                                 </Text>
                             </TouchableOpacity>
                             <View style={styles.bottomButtons}>
@@ -153,17 +465,17 @@ export default function CameraScreen() {
                                     style={styles.actionButton}
                                     onPress={handleCancel}
                                 >
-                                    <Text style={styles.buttonText}>Cancel</Text>
+                                    <Text style={styles.buttonText}>Tühista</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity 
                                     style={[
                                         styles.actionButton, 
-                                        (selectedFolder && selectedFileType) ? styles.sendButtonEnabled : styles.sendButtonDisabled
+                                        (selectedFolder && selectedNote) ? styles.sendButtonEnabled : styles.sendButtonDisabled
                                     ]}
                                     onPress={handleSend}
-                                    disabled={!(selectedFolder && selectedFileType)}
+                                    disabled={!(selectedFolder && selectedNote)}
                                 >
-                                    <Text style={styles.buttonText}>Send</Text>
+                                    <Text style={styles.buttonText}>Saada</Text>
                                 </TouchableOpacity>
                             </View>
                         </>
@@ -347,5 +659,67 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         marginBottom: 10,
         alignSelf: 'center',
-    }
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#000',
+    },
+    loadingText: {
+        color: '#fff',
+        marginTop: 10,
+        fontSize: 16,
+    },
+    emptyText: {
+        color: '#555',
+        textAlign: 'center',
+        padding: 15,
+        fontSize: 16,
+    },
+    backToPhotoButton: {
+        backgroundColor: '#E53935',
+        padding: 15,
+        borderRadius: 25,
+        alignItems: 'center',
+        marginTop: 15,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
+    },
+    retryButton: {
+        backgroundColor: '#1B4332',
+        padding: 15,
+        borderRadius: 25,
+        alignItems: 'center',
+        marginTop: 10,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
+    },
+    cancelButton: {
+        backgroundColor: '#E53935',
+        padding: 15,
+        borderRadius: 25,
+        alignItems: 'center',
+        marginTop: 10,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
+    },
 });

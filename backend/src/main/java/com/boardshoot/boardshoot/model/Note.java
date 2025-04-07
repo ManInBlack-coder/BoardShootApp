@@ -35,9 +35,8 @@ public class Note {
         name = "note_images",
         joinColumns = @JoinColumn(name = "note_id")
     )
-    @Lob // Märgime, et tegu on suure binaarse objektiga
-    @Column(name = "image", columnDefinition = "bytea") // PostgreSQL-spetsiifiline tüübi määramine
-    private List<byte[]> images = new ArrayList<>();
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private List<String> imageUrls = new ArrayList<>();
     
     public Long getId() {
         return id;
@@ -83,15 +82,15 @@ public class Note {
         this.texts.add(text);
     }
     
-    public List<byte[]> getImages() {
-        return images;
+    public List<String> getImageUrls() {
+        return imageUrls;
     }
     
-    public void setImages(List<byte[]> images) {
-        this.images = images;
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls;
     }
     
-    public void addImage(byte[] image) {
-        this.images.add(image);
+    public void addImageUrl(String imageUrl) {
+        this.imageUrls.add(imageUrl);
     }
 }
