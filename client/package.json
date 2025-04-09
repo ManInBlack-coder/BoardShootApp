@@ -8,10 +8,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "jest --watchAll"
-  },
-  "jest": {
-    "preset": "jest-expo"
+    "test": "jest --config=jest.config.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
@@ -46,6 +43,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@testing-library/react-native": "^12.4.3",
+    "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.16",
     "@types/react": "~18.3.12",
     "@types/react-native": "^0.72.8",
