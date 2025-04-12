@@ -3,6 +3,7 @@ package com.boardshoot.boardshoot.controllers;
 import com.boardshoot.boardshoot.model.User;
 import com.boardshoot.boardshoot.repository.UserRepository;
 import com.boardshoot.boardshoot.security.JwtUtils;
+import com.boardshoot.boardshoot.service.UserCacheService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,9 @@ public class AuthController {
 
     @Autowired
     private JwtUtils jwtUtils;
+    
+    @Autowired
+    private UserCacheService userCacheService;
 
     @PostMapping(value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> registerUser(@RequestBody User signUpRequest) {
@@ -57,6 +61,9 @@ public class AuthController {
         userRepository.save(user);
         logger.info("User registered successfully: {}", user.getUsername());
 
+        // Salvestame kasutaja vahemällu
+        userCacheService.cacheUser(user);
+
         // Generate JWT token for immediate login after signup
         String jwt = jwtUtils.generateJwtToken(user.getUsername());
         
@@ -82,6 +89,9 @@ public class AuthController {
                     .badRequest()
                     .body("{\"error\": \"Invalid credentials\"}");
             }
+            
+            // Salvestame kasutaja vahemällu
+            userCacheService.cacheUser(user);
             
             String jwt = jwtUtils.generateJwtToken(user.getUsername());
             logger.info("User logged in successfully: {}", user.getUsername());
@@ -110,10 +120,23 @@ public class AuthController {
                 
                 if (jwtUtils.validateJwtToken(token)) {
                     String username = jwtUtils.getUserNameFromJwtToken(token);
+                    
+                    // Proovime vahemälust kasutajat leida
+                    Map<String, Object> cachedUser = userCacheService.getCachedUser(username);
+                    
+                    if (cachedUser != null) {
+                        logger.info("User profile fetched from cache: {}", username);
+                        return ResponseEntity.ok(cachedUser);
+                    }
+                    
+                    // Kui vahemälus ei ole, siis võtame andmebaasist
                     User user = userRepository.findByUsername(username)
                         .orElseThrow(() -> new RuntimeException("User not found"));
                     
-                    logger.info("Profile fetched for user: {}", username);
+                    // Salvestame kasutaja vahemällu järgmisteks päringuteks
+                    userCacheService.cacheUser(user);
+                    
+                    logger.info("Profile fetched from database for user: {}", username);
                     return ResponseEntity.ok(mapUserToResponse(user));
                 }
             }
