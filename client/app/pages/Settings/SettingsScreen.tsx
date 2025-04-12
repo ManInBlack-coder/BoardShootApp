@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   text: {
-    marginTop: 85, 
+    marginTop: 75, 
     fontSize: 32,
     fontWeight: 'bold',
     color: "#FFFFFF",
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     marginRight: 180
   },
   text3: {
-    marginTop: 80, 
+    marginTop: 40, 
     fontSize: 16,
     fontWeight: 'bold',
     color: "black",
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center', 
     backgroundColor: '#C28D00', 
-    marginTop: 30, 
+    marginTop: 20, 
     borderRadius: 5, 
   },
   boxText2: {
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   ovalBox: {
-    width: 150,
+    width: 100,
     height: 30,
     borderRadius: 25,
     justifyContent: 'center',

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, ActivityIndicator, Alert, Dimensions } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { folderService, noteService } from '../../services/noteService';
 import { useFocusEffect } from '@react-navigation/native';
@@ -33,6 +33,11 @@ export default function CameraScreen() {
     const [networkAvailable, setNetworkAvailable] = useState<boolean>(true);
     const [retryCount, setRetryCount] = useState<number>(0);
     const MAX_RETRIES = 3;
+    
+    // Suumimisega seotud oleku väärtused
+    const [zoom, setZoom] = useState(0);
+    const [touchStart, setTouchStart] = useState({ x: 0, y: 0 });
+    const [touchEnd, setTouchEnd] = useState({ x: 0, y: 0 });
 
     // Funktsioon kaustade laadimiseks - tuleb deklareerida enne kasutamist
     const loadFolders = useCallback(async () => {
@@ -352,6 +357,48 @@ export default function CameraScreen() {
         }
     };
 
+    // Suumimisfunktsioonid
+    const handleTouchStart = (event: any) => {
+        const { pageX, pageY } = event.nativeEvent;
+        setTouchStart({ x: pageX, y: pageY });
+    };
+    
+    const handleTouchMove = (event: any) => {
+        const { pageX, pageY } = event.nativeEvent;
+        setTouchEnd({ x: pageX, y: pageY });
+        
+        // Arvutame suurenduse/vähenduse
+        const screenHeight = Dimensions.get('window').height;
+        
+        // Vertikaalne liikumine mõjutab suumi
+        const moveY = touchStart.y - pageY;
+        
+        // Vähendame tundlikkust, määrates väiksema kordaja
+        // Varasemalt kasutasime otsest protsentuaalset muutust, nüüd muudame seda aeglasemaks
+        const sensitivity = 0.15; // Vähendame tundlikkust (väärtus 0-1 vahel, madalam = aeglasem)
+        const zoomChange = (moveY / screenHeight) * sensitivity;
+        
+        // Uuendame suumi väärtust, piirame 0-1 vahele
+        let newZoom = zoom + zoomChange;
+        newZoom = Math.min(Math.max(newZoom, 0), 1);
+        
+        // Kui muutus on väike, siis ignoreerime seda, et vältida värisemist
+        if (Math.abs(newZoom - zoom) > 0.001) {
+            setZoom(newZoom);
+        }
+    };
+    
+    const handleTouchEnd = () => {
+        // Lähtestame puutepunktid
+        setTouchStart({ x: 0, y: 0 });
+        setTouchEnd({ x: 0, y: 0 });
+    };
+
+    const formatZoom = () => {
+        // Arvutame suumi väärtuse näitamiseks (1.0x - 10.0x)
+        return `${(1 + zoom * 9).toFixed(1)}x`;
+    };
+
     if (!permission) {
         return <View />;
     }
@@ -486,18 +533,29 @@ export default function CameraScreen() {
     }
 
     return (
-        <View style={styles.container}>
+        <View 
+            style={styles.container}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+        >
             <CameraView 
                 style={styles.preview} 
                 facing={facing}
                 ref={cameraRef}
+                zoom={zoom}
             >
                 <View style={styles.buttonContainer}>
-                    <TouchableOpacity 
-                        onPress={takePicture} 
-                        style={styles.capture}
-                    >
-                    </TouchableOpacity>
+                    <View style={styles.captureWrapper}>
+                        <TouchableOpacity 
+                            onPress={takePicture} 
+                            style={styles.capture}
+                        >
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.zoomIndicator}>
+                        <Text style={styles.zoomText}>{formatZoom()}</Text>
+                    </View>
                 </View>
             </CameraView>
         </View>
@@ -518,22 +576,27 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flex: 0,
         flexDirection: 'row',
-        justifyContent: 'center',
-        gap: 20,
-        backgroundColor: '#00BB8E',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
         width: '100%',
-        height: '17%',
+        height: '20%',
+        paddingHorizontal: 20,
+    },
+    captureWrapper: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     capture: {
-        backgroundColor: '#fff',
         borderRadius: 50,
         padding: 15,
         paddingHorizontal: 20,
-        margin: 20,
-        height: 70,
-        width: 70,
-        borderColor: 'black',
-        borderWidth: 4,
+        height: 80,
+        width: 80,
+        borderColor: '#FFFFFF',
+        borderWidth: 6,
     },
     fullScreenPreview: {
         flex: 1,
@@ -721,5 +784,20 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 1.41,
         elevation: 2,
+    },
+    zoomIndicator: {
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        padding: 10,
+        borderRadius: 20,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 1,
+        marginRight: 25,
+    },
+    zoomText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });
